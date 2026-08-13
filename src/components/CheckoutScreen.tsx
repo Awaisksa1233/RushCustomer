@@ -84,12 +84,11 @@ export default function CheckoutScreen({
     defaultSavedCard ? defaultSavedCard.id : null
   );
 
-  // Payment Choice State ("applepay" | "card" | "saved")
-  const [paymentChoice, setPaymentChoice] = useState<"applepay" | "card" | "saved">("applepay");
+  // Payment Choice State ("card" | "applepay" | "saved") - Default to Moyasar Card Form
+  const [paymentChoice, setPaymentChoice] = useState<"applepay" | "card" | "saved">("card");
 
-  // "If card is present, moyasar form should be hidden"
-  // When a saved card is selected, useMoyasarForm is false.
-  const [useMoyasarForm, setUseMoyasarForm] = useState<boolean>(false);
+  // Moyasar form is visible by default when paymentChoice is "card"
+  const [useMoyasarForm, setUseMoyasarForm] = useState<boolean>(true);
 
   // Sync useMoyasarForm with paymentChoice
   useEffect(() => {

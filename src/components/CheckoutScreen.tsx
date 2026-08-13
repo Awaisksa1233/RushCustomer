@@ -17,7 +17,8 @@ import {
   Shield,
   User,
   Calendar,
-  KeyRound
+  KeyRound,
+  Percent
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { SubscriptionPlan } from "@/types/plan";

@@ -64,6 +64,25 @@ body {
   transform: translateY(-1px) !important;
 }
 
+/* Force Moyasar Apple Pay Button Visibility */
+.mysr-form .mysr-apple-pay,
+.mysr-form .mysr-apple-pay-btn,
+.mysr-form button.mysr-apple-pay-button,
+.mysr-apple-pay-button {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 48px !important;
+  background-color: #000000 !important;
+  border-radius: 1rem !important;
+  margin-bottom: 1rem !important;
+  cursor: pointer !important;
+  -webkit-appearance: -apple-pay-button !important;
+  -apple-pay-button-type: subscribe !important;
+  -apple-pay-button-style: black !important;
+}
+
 /* DISABLED Moyasar Pay Button ONLY (Inputs remain 100% active and typing-enabled) */
 .mysr-btn-disabled button,
 .mysr-btn-disabled button.mysr-btn,

@@ -290,6 +290,42 @@ export default function CheckoutScreen({
             </span>
           </div>
 
+          {/* EXPRESS 1-CLICK APPLE PAY BANNER */}
+          <div className="p-5 rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl space-y-3 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl leading-none text-white font-serif"></span>
+                <div>
+                  <h3 className="text-sm font-black text-white">Apple Pay Express Checkout</h3>
+                  <p className="text-[11px] text-slate-400 font-medium">Subscribe in 1-click using Apple Pay</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/30 shadow-sm">
+                Instant Subscribe
+              </span>
+            </div>
+
+            <button
+              type="button"
+              disabled={!canPay}
+              onClick={handleApplePaySubscribe}
+              className={`w-full py-4 px-6 rounded-2xl font-black text-base transition-all flex items-center justify-center gap-3 shadow-2xl border ${
+                canPay
+                  ? "bg-black hover:bg-slate-900 text-white border-slate-700 cursor-pointer transform active:scale-[0.99] hover:border-slate-500"
+                  : "bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed opacity-50 shadow-none"
+              }`}
+            >
+              <span className="text-2xl leading-none font-serif"></span>
+              <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+            </button>
+
+            {!canPay && (
+              <p className="text-[11px] text-amber-400 text-center font-semibold bg-amber-950/30 p-2 rounded-xl border border-amber-800/30">
+                Please check both mandatory agreement boxes in Step 4 to enable Apple Pay.
+              </p>
+            )}
+          </div>
+
           {/* STEP 1: PACKAGE DETAILS */}
           <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 shadow-xl space-y-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl pointer-events-none" />

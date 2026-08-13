@@ -130,6 +130,28 @@ export default function CheckoutScreen({
     promoTitle = `Code "${appliedPromo.code}" Applied: 50% OFF First Month`;
   }
 
+  // Official Moyasar SDK Integration (5-Minute Quickstart Docs)
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).Moyasar) {
+      try {
+        const container = document.querySelector(".mysr-form");
+        if (container) container.innerHTML = "";
+        (window as any).Moyasar.init({
+          element: ".mysr-form",
+          amount: totalDueToday * 100, // halalas (cents)
+          currency: currency,
+          description: `Rush Wash - ${selectedPlan.name} Subscription`,
+          publishable_api_key: "pk_test_xxxxxxxxxxxxxxxxx",
+          callback_url: "https://rush.com.sa/payment-result",
+          methods: ["creditcard"],
+          supported_networks: ["mada", "visa", "mastercard", "amex", "unionpay"]
+        });
+      } catch (err) {
+        // Fallback gracefully to embedded form if offline/mock environment
+      }
+    }
+  }, [totalDueToday, selectedPlan, currency]);
+
   const applyPromoDirectly = (code: string) => {
     const cleanCode = code.toUpperCase();
     const matched = VALID_PROMO_CODES[cleanCode];
@@ -336,6 +358,9 @@ export default function CheckoutScreen({
                   <span className="px-2 py-0.5 bg-black text-white rounded text-[10px] font-black"> Pay</span>
                 </div>
               </div>
+
+              {/* Official Moyasar JS SDK Container */}
+              <div className="mysr-form empty:hidden" />
 
               {/* Moyasar Form Fields */}
               <div className="space-y-4">

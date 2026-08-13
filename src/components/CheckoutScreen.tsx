@@ -156,7 +156,7 @@ export default function CheckoutScreen({
           currency: currency,
           description: `Rush Wash - ${selectedPlan.name} Subscription`,
           publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_uVRcHBKku16yhUDrwUJ29FDvevjoCo571xJzjDW8",
-          callback_url: "https://rush.com.sa/payment-result",
+          callback_url: "https://rush-customer.vercel.app/payment-result",
           methods: ["creditcard"],
           save_card: true,
           savecard: true,
@@ -199,7 +199,7 @@ export default function CheckoutScreen({
         intervalUnit: "month",
         intervalCount: 1,
       },
-      managementURL: "https://rush.com.sa/account",
+      managementURL: "https://rush-customer.vercel.app/account",
       billingAgreement: `You will be charged ${basePrice} ${currency}/month for ${selectedPlan.name}. Cancel anytime from your account settings.`,
     };
 
@@ -332,8 +332,8 @@ export default function CheckoutScreen({
     setShowApplePayQR(true);
   };
 
-  // Generate Apple Pay checkout QR URL (links to rush.com.sa checkout on Safari)
-  const applePayQRUrl = `https://rush.com.sa/checkout?plan=${selectedPlan.id}&amount=${totalDueToday}&promo=${appliedPromo?.code || ""}&method=applepay`;
+  // Generate Apple Pay checkout QR URL (links to rush-customer.vercel.app checkout on Safari)
+  const applePayQRUrl = `https://rush-customer.vercel.app/checkout?plan=${selectedPlan.id}&amount=${totalDueToday}&promo=${appliedPromo?.code || ""}&method=applepay`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(applePayQRUrl)}&bgcolor=0f172a&color=ffffff&format=svg`;
 
   // Dynamically enforce disabled state on Moyasar SDK inner button when agreements are incomplete

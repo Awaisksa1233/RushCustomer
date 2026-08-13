@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       merchantIdentifier: "merchant.sa.com.rush11",
       displayName: "Rush Wash",
       initiative: "web",
-      initiativeContext: "rush.com.sa",
+      initiativeContext: "rush-customer.vercel.app",
     });
 
     // Create https Agent configured with merchant cert & key

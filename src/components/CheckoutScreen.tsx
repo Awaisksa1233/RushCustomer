@@ -88,11 +88,11 @@ export default function CheckoutScreen({
   // Moyasar State
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [agreedBilling, setAgreedBilling] = useState(false);
-
-  const canPay = agreedTerms && agreedBilling && !isProcessingMoyasar;
   const [showScheduleDetails, setShowScheduleDetails] = useState(true);
   const [isProcessingMoyasar, setIsProcessingMoyasar] = useState(false);
   const [moyasarReceipt, setMoyasarReceipt] = useState<MoyasarPaymentResponse | null>(null);
+
+  const canPay = agreedTerms && agreedBilling && !isProcessingMoyasar;
 
   const basePrice = selectedPlan.monthlyAmount;
   const currency = selectedPlan.currency || "SAR";

@@ -21,7 +21,8 @@ import {
   CheckSquare,
   QrCode,
   Smartphone,
-  ExternalLink
+  ExternalLink,
+  Bug
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { SubscriptionPlan } from "@/types/plan";
@@ -80,6 +81,7 @@ export default function CheckoutScreen({
   // Apple Pay QR Code State (for non-Apple devices)
   const [showApplePayQR, setShowApplePayQR] = useState(false);
   const [isAppleDevice, setIsAppleDevice] = useState(true);
+  const [showDebugSheet, setShowDebugSheet] = useState(false);
   const qrModalRef = useRef<HTMLDivElement>(null);
 
   // Detect Apple device on mount
@@ -917,6 +919,163 @@ export default function CheckoutScreen({
               </div>
             )}
           </div>
+
+          {/* DEBUG: Apple Pay Sheet Preview */}
+          {paymentChoice === "applepay" && (
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowDebugSheet(!showDebugSheet)}
+                className="flex items-center gap-2 text-[11px] font-bold text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+              >
+                <Bug className="w-3.5 h-3.5" />
+                {showDebugSheet ? "Hide" : "Show"} Apple Pay Sheet Debug Preview
+              </button>
+
+              {showDebugSheet && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="rounded-3xl overflow-hidden border border-slate-700 shadow-2xl"
+                >
+                  {/* Sheet Header */}
+                  <div className="bg-gradient-to-b from-slate-800 to-slate-900 px-5 pt-5 pb-4 text-center border-b border-slate-700/60">
+                    <div className="w-12 h-12 rounded-2xl bg-black border border-slate-600 flex items-center justify-center text-white text-2xl font-serif mx-auto mb-2 shadow-lg">
+                      
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Apple Pay Sheet Preview</p>
+                    <p className="text-xs font-extrabold text-amber-400 mt-0.5">⚠ DEBUG MODE — Not a real Apple Pay sheet</p>
+                  </div>
+
+                  {/* Payment Summary */}
+                  <div className="bg-slate-900 px-5 py-4 space-y-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Payment Summary</p>
+                    {buildApplePayLineItems().map((item, idx) => (
+                      <div key={idx} className={`flex justify-between items-center py-1.5 ${
+                        idx > 0 ? "border-t border-slate-800/60" : ""
+                      }`}>
+                        <span className="text-xs text-slate-300 font-medium">{item.label}</span>
+                        <div className="flex items-center gap-2">
+                          {item.type === "pending" && (
+                            <span className="text-[9px] font-bold text-amber-400 bg-amber-950/50 px-1.5 py-0.5 rounded">PENDING</span>
+                          )}
+                          <span className={`text-xs font-bold ${
+                            item.amount.startsWith("-") ? "text-emerald-400" : "text-white"
+                          }`}>
+                            {item.amount} {currency}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Total */}
+                    <div className="flex justify-between items-center pt-3 mt-2 border-t-2 border-slate-700">
+                      <span className="text-sm font-black text-white">TOTAL</span>
+                      <span className="text-sm font-black text-white">{totalDueToday.toFixed(2)} {currency}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] text-slate-500 font-medium">Type</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">Final</span>
+                    </div>
+                  </div>
+
+                  {/* Recurring Payment Details */}
+                  <div className="bg-slate-950 px-5 py-4 space-y-2.5 border-t border-slate-700/60">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">recurringPaymentRequest</p>
+                    {(() => {
+                      const rpr = buildRecurringPaymentRequest();
+                      return (
+                        <div className="space-y-2">
+                          <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800 space-y-1.5">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-500 font-medium">paymentDescription</span>
+                              <span className="text-white font-semibold text-right max-w-[60%]">{rpr.paymentDescription}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-500 font-medium">managementURL</span>
+                              <span className="text-blue-400 font-mono text-[10px]">{rpr.managementURL}</span>
+                            </div>
+                          </div>
+
+                          {/* Regular Billing */}
+                          <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800 space-y-1.5">
+                            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">regularBilling</p>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-500">label</span>
+                              <span className="text-white font-semibold">{rpr.regularBilling.label}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-500">amount</span>
+                              <span className="text-white font-bold">{rpr.regularBilling.amount} {currency}</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-500">interval</span>
+                              <span className="text-slate-300 font-medium">
+                                Every {rpr.regularBilling.intervalCount} {rpr.regularBilling.intervalUnit}(s)
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Trial Billing (if exists) */}
+                          {rpr.trialBilling && (
+                            <div className="bg-amber-950/30 rounded-xl p-3 border border-amber-800/40 space-y-1.5">
+                              <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">trialBilling (Intro Offer)</p>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-slate-500">label</span>
+                                <span className="text-amber-300 font-semibold">{rpr.trialBilling.label}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-slate-500">amount</span>
+                                <span className="text-amber-300 font-bold">{rpr.trialBilling.amount} {currency}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-slate-500">paymentTiming</span>
+                                <span className="text-amber-300 font-medium">{rpr.trialBilling.paymentTiming}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Billing Agreement */}
+                          <div className="bg-slate-900/80 rounded-xl p-3 border border-slate-800">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">billingAgreement</p>
+                            <p className="text-xs text-slate-300 font-medium leading-relaxed">{rpr.billingAgreement}</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Raw JSON */}
+                  <details className="bg-slate-950 border-t border-slate-700/60">
+                    <summary className="px-5 py-2.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-300 transition-colors">
+                      Raw paymentRequest JSON
+                    </summary>
+                    <pre className="px-5 pb-4 text-[10px] font-mono text-slate-400 overflow-x-auto leading-relaxed max-h-72 overflow-y-auto">
+{JSON.stringify({
+  countryCode: "SA",
+  currencyCode: currency,
+  supportedNetworks: ["mada", "visa", "mastercard"],
+  merchantCapabilities: ["supports3DS"],
+  lineItems: buildApplePayLineItems(),
+  total: {
+    label: `Rush Wash - ${selectedPlan.name}`,
+    amount: totalDueToday.toFixed(2),
+    type: "final",
+  },
+  recurringPaymentRequest: buildRecurringPaymentRequest(),
+}, null, 2)}
+                    </pre>
+                  </details>
+
+                  {/* Session Version */}
+                  <div className="bg-slate-900 px-5 py-2.5 border-t border-slate-700/60 flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-slate-500">ApplePaySession Version</span>
+                    <span className="text-xs font-black text-emerald-400 bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-800/40">v14</span>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
 
           {/* Apple Pay QR Code Modal (for non-Apple devices) */}
           {showApplePayQR && (

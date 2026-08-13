@@ -55,7 +55,7 @@ export default function PaymentMethodModal({
     if (cleanNum.startsWith("4")) return "visa";
     if (cleanNum.startsWith("5")) return "mastercard";
     if (cleanNum.startsWith("3")) return "amex";
-    if (cleanNum.startsWith("6")) return "discover";
+    if (cleanNum.startsWith("6") || cleanNum.startsWith("588845")) return "mada";
     return initialCard?.brand || "visa";
   };
 

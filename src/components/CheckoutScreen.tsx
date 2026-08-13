@@ -178,7 +178,7 @@ export default function CheckoutScreen({
   // Process Payment via Moyasar Form
   const handlePayWithMoyasar = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canPay || !holderName || !cardNumber) return;
+    if (!canPay) return;
 
     setIsProcessingMoyasar(true);
 
@@ -360,100 +360,7 @@ export default function CheckoutScreen({
               </div>
 
               {/* Official Moyasar JS SDK Container */}
-              <div className="mysr-form empty:hidden" />
-
-              {/* Moyasar Form Fields */}
-              <div className="space-y-4">
-                
-                {/* Cardholder Name */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-slate-400" /> Cardholder Name (Name on Card)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={holderName}
-                    onChange={(e) => setHolderName(e.target.value)}
-                    placeholder="e.g. Alex Morgan"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                  />
-                </div>
-
-                {/* Card Number with Live Brand Badge */}
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-slate-400" /> Card Number
-                    </label>
-                    <span className={`px-2 py-0.5 text-[10px] font-black text-white rounded ${detectedBrand.bg}`}>
-                      {detectedBrand.label}
-                    </span>
-                  </div>
-
-                  <input
-                    type="text"
-                    required
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    placeholder="4108 •••• •••• 8829"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono font-bold text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 tracking-wider"
-                  />
-                </div>
-
-                {/* Expiry & CVC */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Exp Month</label>
-                    <input
-                      type="text"
-                      maxLength={2}
-                      value={expMonth}
-                      onChange={(e) => setExpMonth(e.target.value)}
-                      placeholder="08"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono font-bold text-center text-slate-900 outline-none focus:border-blue-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Exp Year</label>
-                    <input
-                      type="text"
-                      maxLength={2}
-                      value={expYear}
-                      onChange={(e) => setExpYear(e.target.value)}
-                      placeholder="28"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono font-bold text-center text-slate-900 outline-none focus:border-blue-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">CVC / CVV</label>
-                    <input
-                      type="password"
-                      maxLength={4}
-                      value={cvc}
-                      onChange={(e) => setCvc(e.target.value)}
-                      placeholder="•••"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono font-bold text-center text-slate-900 outline-none focus:border-blue-600"
-                    />
-                  </div>
-                </div>
-
-                {/* Save card checkbox */}
-                <label className="flex items-center gap-2 cursor-pointer pt-1">
-                  <input
-                    type="checkbox"
-                    checked={saveCardInVault}
-                    onChange={(e) => setSaveCardInVault(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
-                  />
-                  <span className="text-xs text-slate-600 font-semibold">
-                    Vault card securely with Moyasar for automatic monthly renewals
-                  </span>
-                </label>
-
-              </div>
+              <div className="mysr-form min-h-[160px] flex items-center justify-center border border-slate-100 rounded-2xl p-4 bg-slate-50/50" />
             </div>
 
           </div>

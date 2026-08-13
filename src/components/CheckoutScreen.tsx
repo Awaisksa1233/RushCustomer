@@ -616,17 +616,27 @@ export default function CheckoutScreen({
                     Official Moyasar Payment Form:
                   </span>
                   
-                  {/* Accepted Payment Schemes: Mada, Visa, Mastercard */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-2.5 py-0.5 bg-emerald-800 text-white rounded text-[10px] font-black tracking-wide border border-emerald-500/30">
-                      مدى Mada
-                    </span>
-                    <span className="px-2.5 py-0.5 bg-blue-700 text-white rounded text-[10px] font-black tracking-wider border border-blue-400/30">
+                  {/* Accepted Payment Scheme Logos: Mada, Visa, Mastercard */}
+                  <div className="flex items-center gap-2">
+                    {/* Mada Logo */}
+                    <div className="flex items-center gap-1 bg-emerald-800 text-white px-2.5 py-1 rounded-lg border border-emerald-500/40 text-[10px] font-black tracking-wide shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                      <span>مدى mada</span>
+                    </div>
+
+                    {/* Visa Official Logo */}
+                    <div className="bg-[#1A1F71] text-white px-3 py-1 rounded-lg border border-blue-400/40 text-[11px] font-black italic tracking-widest shadow-sm font-serif">
                       VISA
-                    </span>
-                    <span className="px-2.5 py-0.5 bg-gradient-to-r from-red-600 to-amber-500 text-white rounded text-[10px] font-black tracking-wide border border-amber-400/30">
-                      Mastercard
-                    </span>
+                    </div>
+
+                    {/* Mastercard Official Graphic Logo */}
+                    <div className="bg-slate-950 text-white px-2.5 py-1 rounded-lg border border-slate-700/80 flex items-center gap-1.5 shadow-sm">
+                      <div className="flex -space-x-1.5 items-center">
+                        <div className="w-3.5 h-3.5 rounded-full bg-[#EB001B]" />
+                        <div className="w-3.5 h-3.5 rounded-full bg-[#F79E1B] opacity-90" />
+                      </div>
+                      <span className="text-[10px] font-black tracking-tight text-slate-200">mastercard</span>
+                    </div>
                   </div>
                 </div>
 

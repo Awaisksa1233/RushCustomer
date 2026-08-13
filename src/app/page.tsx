@@ -12,7 +12,6 @@ import CheckoutScreen from "@/components/CheckoutScreen";
 import { CancellationData, AnalyticsMetric } from "@/types/cancellation";
 import { PaymentMethod, CardFormData, CardBrand } from "@/types/payment";
 import { SubscriptionPlan, FamilyVehicle } from "@/types/plan";
-import { Language, translations } from "@/lib/i18n";
 import { 
   Sparkles, 
   BarChart3, 
@@ -23,12 +22,10 @@ import {
   ShoppingBag,
   Droplets,
   ShieldCheck,
-  Globe,
   ExternalLink
 } from "lucide-react";
 
 export default function Home() {
-  const [lang, setLang] = useState<Language>("en");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cancellationData, setCancellationData] = useState<CancellationData | null>(null);
   const [activeOffer, setActiveOffer] = useState<string | null>(null);
@@ -36,9 +33,6 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<
     "SUBSCRIBER" | "PLANS" | "CHECKOUT" | "FAMILY" | "PAYMENTS" | "ANALYTICS"
   >("SUBSCRIBER");
-
-  const isRtl = lang === "ar";
-  const t = translations[lang];
 
   // Active Plan State (Default to Rush Nano Ceramic 299 SAR)
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan>(() => PLANS[2] || PLANS[0]);
@@ -191,7 +185,6 @@ export default function Home() {
     let brand: CardBrand = "visa";
     if (cleanNum.startsWith("5")) brand = "mastercard";
     if (cleanNum.startsWith("3")) brand = "amex";
-    if (cleanNum.startsWith("6")) brand = "discover";
 
     const last4 = cleanNum.slice(-4) || "1234";
 
@@ -259,12 +252,7 @@ export default function Home() {
   };
 
   return (
-    <main
-      dir={isRtl ? "rtl" : "ltr"}
-      className={`min-h-screen bg-[#0b0f19] text-slate-100 font-sans selection:bg-red-500 selection:text-white pb-24 antialiased ${
-        isRtl ? "font-arabic" : ""
-      }`}
-    >
+    <main className="min-h-screen bg-[#0b0f19] text-slate-100 font-sans selection:bg-red-500 selection:text-white pb-24 antialiased">
       {/* Dynamic Ambient Background Glow */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(204,20,45,0.18),rgba(255,255,255,0))]" />
 
@@ -279,27 +267,19 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-black tracking-tight text-white">
-                  {t.brandName}
+                  Rush Wash
                 </h1>
                 <span className="text-[10px] font-black uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full">
-                  {t.vipMembership}
+                  Unlimited VIP
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-medium">
-                {t.brandSubtitle}
+                Saudi Arabia&apos;s Premier Subscription Car Wash
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 self-start md:self-auto">
-            {/* Language Switcher */}
-            <button
-              onClick={() => setLang(lang === "en" ? "ar" : "en")}
-              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-extrabold text-slate-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-            >
-              <Globe className="w-4 h-4 text-red-500" /> {lang === "en" ? "العربية (AR)" : "English (EN)"}
-            </button>
-
             {/* Portal Login Link */}
             <a
               href="https://rush.com.sa/en/login"
@@ -315,12 +295,12 @@ export default function Home() {
         {/* Main Navigation Pill Tabs */}
         <nav className="flex items-center p-1 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800/80 overflow-x-auto shadow-inner">
           {[
-            { id: "SUBSCRIBER", label: t.nav.portal, icon: Layers },
-            { id: "PLANS", label: t.nav.plans, icon: Tag },
-            { id: "CHECKOUT", label: t.nav.checkout, icon: ShoppingBag },
-            { id: "FAMILY", label: t.nav.family, icon: Users },
+            { id: "SUBSCRIBER", label: "Portal", icon: Layers },
+            { id: "PLANS", label: "Plans", icon: Tag },
+            { id: "CHECKOUT", label: "Moyasar Checkout", icon: ShoppingBag },
+            { id: "FAMILY", label: "Family Pass", icon: Users },
             { id: "PAYMENTS", label: `Cards (${cards.length})`, icon: CreditCard },
-            { id: "ANALYTICS", label: t.nav.analytics, icon: BarChart3 },
+            { id: "ANALYTICS", label: "Analytics", icon: BarChart3 },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -344,11 +324,11 @@ export default function Home() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{t.plans.currentPlan}:</span>
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Current Active Plan:</span>
                 <span className="text-sm font-black text-white">{currentPlan.name} ({currentPlan.priceDisplay}/mo)</span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Renews Aug 31 • Click to launch the 4-step exit survey & cancellation retention flow
+                Renews Aug 31 • Click to launch the mandatory 4-step exit survey & cancellation retention flow
               </p>
             </div>
           </div>

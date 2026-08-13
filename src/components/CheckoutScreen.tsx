@@ -14,14 +14,14 @@ import {
   Check,
   X,
   Sparkles,
-  Percent,
-  Smartphone,
-  QrCode,
-  Shield
+  Shield,
+  User,
+  Calendar,
+  KeyRound
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { SubscriptionPlan } from "@/types/plan";
-import { PaymentMethod, MoyasarPaymentResponse } from "@/types/payment";
+import { PaymentMethod, MoyasarPaymentResponse, CardBrand } from "@/types/payment";
 
 interface CheckoutScreenProps {
   selectedPlan: SubscriptionPlan;
@@ -75,19 +75,37 @@ export default function CheckoutScreen({
   } | null>(null);
 
   const [promoError, setPromoError] = useState<string | null>(null);
-  
-  // Moyasar Payment Methods
-  const [moyasarChannel, setMoyasarChannel] = useState<"mada" | "creditcard" | "applepay" | "stcpay">("mada");
-  const [selectedCardId, setSelectedCardId] = useState<string>(paymentMethods[0]?.id || "card_1");
+
+  // Embedded Moyasar Credit/Debit Card Form Fields
+  const [holderName, setHolderName] = useState("Alex Morgan");
+  const [cardNumber, setCardNumber] = useState("4108 8829 4102 9918");
+  const [expMonth, setExpMonth] = useState("08");
+  const [expYear, setExpYear] = useState("28");
+  const [cvc, setCvc] = useState("889");
+  const [saveCardInVault, setSaveCardInVault] = useState(true);
+
+  // Moyasar State
   const [agreedConsent, setAgreedConsent] = useState(false);
   const [showScheduleDetails, setShowScheduleDetails] = useState(true);
-  
-  // Moyasar Transaction State
   const [isProcessingMoyasar, setIsProcessingMoyasar] = useState(false);
   const [moyasarReceipt, setMoyasarReceipt] = useState<MoyasarPaymentResponse | null>(null);
 
   const basePrice = selectedPlan.monthlyAmount;
   const currency = selectedPlan.currency || "SAR";
+
+  // Card Brand Detection for Moyasar
+  const getCardBrand = (num: string): { brand: CardBrand; label: string; bg: string } => {
+    const clean = num.replace(/\D/g, "");
+    if (clean.startsWith("588845") || clean.startsWith("440647") || clean.startsWith("968208") || clean.startsWith("5")) {
+      return { brand: "mada", label: "Mada (مدى)", bg: "bg-emerald-700" };
+    }
+    if (clean.startsWith("3")) {
+      return { brand: "amex", label: "American Express", bg: "bg-blue-700" };
+    }
+    return { brand: "visa", label: "Visa / Mastercard", bg: "bg-blue-600" };
+  };
+
+  const detectedBrand = getCardBrand(cardNumber);
 
   // Calculate pricing based on applied promo code
   let totalDueToday = basePrice;
@@ -129,10 +147,10 @@ export default function CheckoutScreen({
     setPromoError(null);
   };
 
-  // Process Payment via Moyasar Gateway
-  const handlePayNow = (e: React.FormEvent) => {
+  // Process Payment via Moyasar Form
+  const handlePayWithMoyasar = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreedConsent) return;
+    if (!agreedConsent || !holderName || !cardNumber) return;
 
     setIsProcessingMoyasar(true);
 
@@ -142,14 +160,14 @@ export default function CheckoutScreen({
       const response: MoyasarPaymentResponse = {
         id: `moy_pay_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString().slice(-4)}`,
         status: "paid",
-        amount: totalDueToday * 100, // Moyasar amounts in halalas (cents)
+        amount: totalDueToday * 100, // Halalas
         currency: "SAR",
         description: `Rush Wash - ${selectedPlan.name} Subscription`,
         source: {
-          type: moyasarChannel,
-          company: moyasarChannel === "mada" ? "Mada Debit Card" : moyasarChannel === "stcpay" ? "STC Pay Wallet" : moyasarChannel === "applepay" ? "Apple Pay" : "Visa / Mastercard",
-          name: "Alex Morgan",
-          number: moyasarChannel === "stcpay" ? "+966 50 *** 4567" : "4108 **** **** 8829",
+          type: detectedBrand.brand === "mada" ? "mada" : "creditcard",
+          company: detectedBrand.label,
+          name: holderName,
+          number: cardNumber.slice(-4) ? `•••• ${cardNumber.slice(-4)}` : "•••• 8829",
         },
         createdAt: new Date().toISOString(),
       };
@@ -168,9 +186,9 @@ export default function CheckoutScreen({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {!moyasarReceipt ? (
-        <form onSubmit={handlePayNow} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <form onSubmit={handlePayWithMoyasar} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Package, Promo & Moyasar Channels */}
+          {/* Left Column: Package, Promo Code & Moyasar Form */}
           <div className="lg:col-span-7 space-y-6">
             
             {/* Selected Package Header */}
@@ -270,148 +288,132 @@ export default function CheckoutScreen({
               )}
             </div>
 
-            {/* MOYASAR PAYMENT GATEWAY CHANNELS */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+            {/* MOYASAR EMBEDDED FORM WIDGET */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-5">
+              
+              {/* Moyasar Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#0066FF] text-white flex items-center justify-center font-black text-[11px]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#0066FF] text-white flex items-center justify-center font-black text-sm shadow-sm">
                     م
                   </div>
                   <div>
                     <h4 className="text-sm font-black uppercase tracking-wider text-slate-900">
-                      Moyasar Payments (مويسر)
+                      Moyasar Payment Form
                     </h4>
                     <p className="text-[11px] text-slate-500 font-medium">
-                      Saudi Arabia PCI-DSS Certified Gateway • Mada, Apple Pay, STC Pay
+                      PCI-DSS Certified • Supports Mada (مدى), Visa, Mastercard, Apple Pay
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-slate-400">Step 2 of 2</span>
+
+                <div className="flex items-center gap-1 text-[10px] font-extrabold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Moyasar Verified
+                </div>
               </div>
 
-              {/* Moyasar Payment Options */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Supported Payment Logos Bar */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs font-bold text-slate-700">
+                <span className="text-[10px] uppercase text-slate-400 font-extrabold">Accepted via Moyasar:</span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-emerald-700 text-white rounded text-[10px] font-black">مدى (Mada)</span>
+                  <span className="px-2 py-0.5 bg-blue-600 text-white rounded text-[10px] font-black">VISA</span>
+                  <span className="px-2 py-0.5 bg-red-600 text-white rounded text-[10px] font-black">Mastercard</span>
+                  <span className="px-2 py-0.5 bg-black text-white rounded text-[10px] font-black"> Pay</span>
+                </div>
+              </div>
+
+              {/* Moyasar Form Fields */}
+              <div className="space-y-4">
                 
-                {/* Mada Option */}
-                <div
-                  onClick={() => setMoyasarChannel("mada")}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
-                    moyasarChannel === "mada"
-                      ? "border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-100 shadow-sm"
-                      : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
-                >
+                {/* Cardholder Name */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-slate-400" /> Cardholder Name (Name on Card)
+                  </label>
                   <input
-                    type="radio"
-                    name="moyasar-channel"
-                    checked={moyasarChannel === "mada"}
-                    onChange={() => setMoyasarChannel("mada")}
-                    className="text-emerald-600 focus:ring-emerald-500"
+                    type="text"
+                    required
+                    value={holderName}
+                    onChange={(e) => setHolderName(e.target.value)}
+                    placeholder="e.g. Alex Morgan"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                   />
-                  <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-black text-xs">
-                    مدى
+                </div>
+
+                {/* Card Number with Live Brand Badge */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-slate-400" /> Card Number
+                    </label>
+                    <span className={`px-2 py-0.5 text-[10px] font-black text-white rounded ${detectedBrand.bg}`}>
+                      {detectedBrand.label}
+                    </span>
                   </div>
+
+                  <input
+                    type="text"
+                    required
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    placeholder="4108 •••• •••• 8829"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono font-bold text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 tracking-wider"
+                  />
+                </div>
+
+                {/* Expiry & CVC */}
+                <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <span className="font-extrabold text-xs text-slate-900 block">Mada (مدى)</span>
-                    <span className="text-[10px] text-slate-500 font-semibold">Saudi Debit Card</span>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Exp Month</label>
+                    <input
+                      type="text"
+                      maxLength={2}
+                      value={expMonth}
+                      onChange={(e) => setExpMonth(e.target.value)}
+                      placeholder="08"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono font-bold text-center text-slate-900 outline-none focus:border-blue-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Exp Year</label>
+                    <input
+                      type="text"
+                      maxLength={2}
+                      value={expYear}
+                      onChange={(e) => setExpYear(e.target.value)}
+                      placeholder="28"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono font-bold text-center text-slate-900 outline-none focus:border-blue-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">CVC / CVV</label>
+                    <input
+                      type="password"
+                      maxLength={4}
+                      value={cvc}
+                      onChange={(e) => setCvc(e.target.value)}
+                      placeholder="•••"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm font-mono font-bold text-center text-slate-900 outline-none focus:border-blue-600"
+                    />
                   </div>
                 </div>
 
-                {/* Apple Pay Option */}
-                <div
-                  onClick={() => setMoyasarChannel("applepay")}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
-                    moyasarChannel === "applepay"
-                      ? "border-slate-900 bg-slate-900 text-white ring-2 ring-slate-400 shadow-sm"
-                      : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
-                >
+                {/* Save card checkbox */}
+                <label className="flex items-center gap-2 cursor-pointer pt-1">
                   <input
-                    type="radio"
-                    name="moyasar-channel"
-                    checked={moyasarChannel === "applepay"}
-                    onChange={() => setMoyasarChannel("applepay")}
-                    className="text-slate-900"
+                    type="checkbox"
+                    checked={saveCardInVault}
+                    onChange={(e) => setSaveCardInVault(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
                   />
-                  <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center font-black text-xs">
-                    
-                  </div>
-                  <div>
-                    <span className={`font-extrabold text-xs block ${moyasarChannel === "applepay" ? "text-white" : "text-slate-900"}`}>
-                      Apple Pay
-                    </span>
-                    <span className={`text-[10px] font-semibold ${moyasarChannel === "applepay" ? "text-slate-300" : "text-slate-500"}`}>
-                      1-Click Touch ID
-                    </span>
-                  </div>
-                </div>
+                  <span className="text-xs text-slate-600 font-semibold">
+                    Vault card securely with Moyasar for automatic monthly renewals
+                  </span>
+                </label>
 
-                {/* Credit Card Option */}
-                <div
-                  onClick={() => setMoyasarChannel("creditcard")}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
-                    moyasarChannel === "creditcard"
-                      ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-100 shadow-sm"
-                      : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="moyasar-channel"
-                    checked={moyasarChannel === "creditcard"}
-                    onChange={() => setMoyasarChannel("creditcard")}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs">
-                    <CreditCard className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="font-extrabold text-xs text-slate-900 block">Visa / Master</span>
-                    <span className="text-[10px] text-slate-500 font-semibold">Credit / Debit</span>
-                  </div>
-                </div>
-
-                {/* STC Pay Option */}
-                <div
-                  onClick={() => setMoyasarChannel("stcpay")}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
-                    moyasarChannel === "stcpay"
-                      ? "border-purple-600 bg-purple-50/50 ring-2 ring-purple-100 shadow-sm"
-                      : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="moyasar-channel"
-                    checked={moyasarChannel === "stcpay"}
-                    onChange={() => setMoyasarChannel("stcpay")}
-                    className="text-purple-600 focus:ring-purple-500"
-                  />
-                  <div className="w-8 h-8 rounded-xl bg-purple-700 text-white flex items-center justify-center font-black text-xs">
-                    STC
-                  </div>
-                  <div>
-                    <span className="font-extrabold text-xs text-slate-900 block">STC Pay</span>
-                    <span className="text-[10px] text-slate-500 font-semibold">Digital Wallet</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Saved Card Quick Select */}
-              <div className="pt-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
-                  Saved Cards on File (Moyasar Vault):
-                </span>
-                {paymentMethods.map((card) => (
-                  <div key={card.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center text-xs">
-                    <span className="font-mono font-bold text-slate-800">
-                      {card.brand.toUpperCase()} •••• {card.last4} ({card.holderName})
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                      Moyasar Vaulted
-                    </span>
-                  </div>
-                ))}
               </div>
             </div>
 
@@ -423,10 +425,10 @@ export default function CheckoutScreen({
               
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                  <Receipt className="w-4 h-4 text-red-400" /> Moyasar Invoice
+                  <Receipt className="w-4 h-4 text-red-400" /> Moyasar Summary
                 </h4>
                 <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                  🇸🇦 Moyasar KSA
+                  Moyasar KSA
                 </span>
               </div>
 
@@ -437,8 +439,8 @@ export default function CheckoutScreen({
                 </div>
 
                 <div className="flex justify-between text-slate-300">
-                  <span>Payment Channel:</span>
-                  <span className="font-bold text-amber-400 uppercase">{moyasarChannel} via Moyasar</span>
+                  <span>Detected Card Type:</span>
+                  <span className="font-bold text-emerald-400 uppercase">{detectedBrand.label}</span>
                 </div>
 
                 {appliedPromo && (
@@ -469,7 +471,7 @@ export default function CheckoutScreen({
               {showScheduleDetails && (
                 <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5 text-[11px]">
                   <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">
-                    Moyasar Auto-Renew Schedule
+                    Moyasar Renewal Schedule
                   </span>
                   
                   {appliedPromo?.type === "THREE_FOR_100" && (
@@ -537,7 +539,7 @@ export default function CheckoutScreen({
                   </span>
                 ) : (
                   <>
-                    <Lock className="w-4 h-4 text-emerald-400" /> Pay {totalDueToday} {currency} via Moyasar
+                    <Lock className="w-4 h-4 text-emerald-400" /> Pay {totalDueToday} {currency} with Moyasar
                   </>
                 )}
               </button>
@@ -583,8 +585,8 @@ export default function CheckoutScreen({
               <strong className="text-slate-900">{totalDueToday} {currency}</strong>
             </div>
             <div className="flex justify-between">
-              <span>Channel:</span>
-              <strong className="text-emerald-700 uppercase">{moyasarReceipt.source.company}</strong>
+              <span>Card / Scheme:</span>
+              <strong className="text-emerald-700 uppercase">{moyasarReceipt.source.company} ({moyasarReceipt.source.number})</strong>
             </div>
             <div className="flex justify-between">
               <span>Status:</span>

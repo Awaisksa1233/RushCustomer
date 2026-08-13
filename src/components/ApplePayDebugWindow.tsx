@@ -111,7 +111,7 @@ export default function ApplePayDebugWindow({
       try {
         if (typeof ApplePaySession.canMakePaymentsWithActiveCard === "function") {
           // Merchant identifier used in Apple Pay setup
-          canPayActive = await ApplePaySession.canMakePaymentsWithActiveCard("merchant.sa.com.rush11");
+          canPayActive = await ApplePaySession.canMakePaymentsWithActiveCard("merchant.sa.com.rush1");
         } else {
           canPayActive = "canMakePaymentsWithActiveCard API unavailable";
         }

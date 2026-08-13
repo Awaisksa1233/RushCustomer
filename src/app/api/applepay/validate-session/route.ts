@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         status: "ok",
         message: "Apple Pay Merchant Certificates Loaded & Verified Successfully!",
-        merchantIdentifier: "merchant.sa.com.rush11",
+        merchantIdentifier: "merchant.sa.com.rush1",
         initiativeContext: domainName,
         certificateLength: certContent.length,
         keyLength: keyContent.length,
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     // Payload for Apple Pay Merchant Session
     const payload = JSON.stringify({
-      merchantIdentifier: "merchant.sa.com.rush11",
+      merchantIdentifier: "merchant.sa.com.rush1",
       displayName: "Rush Wash",
       initiative: "web",
       initiativeContext: domainName,

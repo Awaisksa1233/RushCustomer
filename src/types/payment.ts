@@ -1,4 +1,4 @@
-export type CardBrand = "mada" | "visa" | "mastercard" | "amex" | "applepay" | "stcpay";
+export type CardBrand = "mada" | "visa" | "mastercard" | "amex" | "applepay" | "stcpay" | "discover";
 
 export interface PaymentMethod {
   id: string;

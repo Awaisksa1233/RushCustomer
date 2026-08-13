@@ -893,7 +893,9 @@ export default function CheckoutScreen({
                   </div>
                   <div>
                     <span className="font-extrabold text-sm text-white block">Apple Pay</span>
-                    <span className="text-[11px] text-slate-400 font-medium">1-Click Express Checkout</span>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {isAppleDevice ? "1-Click Express Checkout" : "Safari on iPhone / Mac required"}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

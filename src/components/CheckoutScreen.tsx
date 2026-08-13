@@ -126,19 +126,21 @@ export default function CheckoutScreen({
     promoTitle = `Code "${appliedPromo.code}" Applied: 50% OFF First Month`;
   }
 
-  const handleApplyPromo = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanCode = promoCodeInput.trim().toUpperCase();
-    if (!cleanCode) return;
-
+  const applyPromoDirectly = (code: string) => {
+    const cleanCode = code.toUpperCase();
     const matched = VALID_PROMO_CODES[cleanCode];
     if (matched) {
+      setPromoCodeInput(cleanCode);
       setAppliedPromo({ code: cleanCode, ...matched });
       setPromoError(null);
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-    } else {
-      setPromoError(`Invalid promo code "${cleanCode}". Try "100FOR3" or "BUY2GET1"`);
     }
+  };
+
+  const handleApplyPromo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!promoCodeInput.trim()) return;
+    applyPromoDirectly(promoCodeInput.trim());
   };
 
   const handleRemovePromo = () => {
@@ -242,22 +244,30 @@ export default function CheckoutScreen({
                   )}
 
                   <div className="pt-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">Sample Promo Codes:</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">Click to Apply Promo Code:</span>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => { setPromoCodeInput("100FOR3"); setPromoError(null); }}
-                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                        onClick={() => applyPromoDirectly("100FOR3")}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 active:scale-95 text-red-700 border border-red-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
                       >
-                        <Sparkles className="w-3 h-3 text-red-500" /> 100FOR3 (100 SAR/mo 3 Months)
+                        <Sparkles className="w-3.5 h-3.5 text-red-500" /> 100FOR3 (100 SAR/mo 3 Months)
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => { setPromoCodeInput("BUY2GET1"); setPromoError(null); }}
-                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                        onClick={() => applyPromoDirectly("BUY2GET1")}
+                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
                       >
-                        <Tag className="w-3 h-3 text-emerald-600" /> BUY2GET1 (2+1 Free)
+                        <Tag className="w-3.5 h-3.5 text-emerald-600" /> BUY2GET1 (2+1 Free)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => applyPromoDirectly("RUSH50")}
+                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-800 border border-blue-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Percent className="w-3.5 h-3.5 text-blue-600" /> RUSH50 (50% OFF Month 1)
                       </button>
                     </div>
                   </div>

@@ -83,6 +83,32 @@ body {
   -apple-pay-button-style: black !important;
 }
 
+/* Official Apple Pay Subscribe Button CSS Classes */
+.apple-pay-subscribe-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 56px !important;
+  border-radius: 1rem !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  -webkit-appearance: -apple-pay-button !important;
+  -apple-pay-button-type: subscribe !important;
+  -apple-pay-button-style: black !important;
+}
+
+apple-pay-button {
+  --apple-pay-button-width: 100%;
+  --apple-pay-button-height: 56px;
+  --apple-pay-button-border-radius: 16px;
+  --apple-pay-button-box-sizing: border-box;
+  display: block !important;
+  width: 100% !important;
+  height: 56px !important;
+}
+
 /* DISABLED Moyasar Pay Button ONLY (Inputs remain 100% active and typing-enabled) */
 .mysr-btn-disabled button,
 .mysr-btn-disabled button.mysr-btn,

@@ -1217,29 +1217,18 @@ export default function CheckoutScreen({
                     <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing Apple Pay...
                   </button>
                 ) : (
-                  (() => {
-                    const ApplePayButton = "apple-pay-button" as any;
-                    return (
-                      <ApplePayButton
-                        buttonstyle="black"
-                        type="subscribe"
-                        locale="en-US"
-                        onClick={handleApplePaySubscribe}
-                        style={{
-                          display: "block",
-                          width: "100%",
-                          height: "56px",
-                          borderRadius: "16px",
-                          cursor: canPay ? "pointer" : "not-allowed",
-                          opacity: canPay ? 1 : 0.5,
-                          pointerEvents: canPay ? "auto" : "none",
-                          WebkitAppearance: "-apple-pay-button",
-                          WebkitApplePayButtonStyle: "black",
-                          WebkitApplePayButtonType: "subscribe",
-                        }}
-                      />
-                    );
-                  })()
+                  <div className="relative w-full">
+                    {/* Native Webkit / Web Component button with type="subscribe" */}
+                    <button
+                      type="button"
+                      disabled={!canPay}
+                      onClick={handleApplePaySubscribe}
+                      className="apple-pay-subscribe-btn w-full py-4 px-6 rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2.5 shadow-2xl bg-black text-white border border-slate-700 hover:bg-slate-900 cursor-pointer transform active:scale-[0.99] hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                    >
+                      <span className="text-2xl leading-none font-serif"></span>
+                      <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (

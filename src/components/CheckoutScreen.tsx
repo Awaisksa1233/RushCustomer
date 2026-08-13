@@ -86,7 +86,10 @@ export default function CheckoutScreen({
   const [saveCardInVault, setSaveCardInVault] = useState(true);
 
   // Moyasar State
-  const [agreedConsent, setAgreedConsent] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [agreedBilling, setAgreedBilling] = useState(false);
+
+  const canPay = agreedTerms && agreedBilling && !isProcessingMoyasar;
   const [showScheduleDetails, setShowScheduleDetails] = useState(true);
   const [isProcessingMoyasar, setIsProcessingMoyasar] = useState(false);
   const [moyasarReceipt, setMoyasarReceipt] = useState<MoyasarPaymentResponse | null>(null);
@@ -153,7 +156,7 @@ export default function CheckoutScreen({
   // Process Payment via Moyasar Form
   const handlePayWithMoyasar = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreedConsent || !holderName || !cardNumber) return;
+    if (!canPay || !holderName || !cardNumber) return;
 
     setIsProcessingMoyasar(true);
 
@@ -555,25 +558,47 @@ export default function CheckoutScreen({
                 </div>
               )}
 
-              {/* Consent Checkbox */}
-              <label className="flex items-start gap-2.5 cursor-pointer pt-1">
-                <input
-                  type="checkbox"
-                  checked={agreedConsent}
-                  onChange={(e) => setAgreedConsent(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-700 cursor-pointer shrink-0"
-                />
-                <span className="text-[11px] text-slate-300 leading-tight font-medium">
-                  I agree to the Moyasar recurring payment terms. Cancel anytime in 1-click.
-                </span>
-              </label>
+              {/* Dual Agreement Checkboxes Matching Reference Screenshot */}
+              <div className="space-y-2.5 pt-1 border-t border-slate-800">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={agreedTerms}
+                    onChange={(e) => setAgreedTerms(e.target.checked)}
+                    className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-700 cursor-pointer shrink-0"
+                  />
+                  <span className="text-xs text-slate-300 font-medium">
+                    I agree to the{" "}
+                    <a
+                      href="https://rush.com.sa/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-red-500 underline font-semibold hover:text-red-400"
+                    >
+                      Terms and Conditions
+                    </a>
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={agreedBilling}
+                    onChange={(e) => setAgreedBilling(e.target.checked)}
+                    className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-700 cursor-pointer shrink-0"
+                  />
+                  <span className="text-xs text-slate-300 font-medium">
+                    I understand I will be billed monthly unless I cancel.
+                  </span>
+                </label>
+              </div>
 
               {/* Moyasar Pay Button */}
               <button
                 type="submit"
-                disabled={!agreedConsent || isProcessingMoyasar}
+                disabled={!canPay}
                 className={`w-full py-3.5 px-5 font-extrabold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 ${
-                  agreedConsent && !isProcessingMoyasar
+                  canPay
                     ? "bg-[#cc142d] hover:bg-[#b00f24] text-white shadow-lg shadow-red-500/25 cursor-pointer"
                     : "bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed"
                 }`}
@@ -589,9 +614,9 @@ export default function CheckoutScreen({
                 )}
               </button>
 
-              {!agreedConsent && (
+              {!canPay && (
                 <p className="text-[10px] text-amber-400 text-center font-semibold flex items-center justify-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> Check consent box to complete Moyasar payment
+                  <AlertCircle className="w-3 h-3" /> Check both agreement boxes above to complete order
                 </p>
               )}
 

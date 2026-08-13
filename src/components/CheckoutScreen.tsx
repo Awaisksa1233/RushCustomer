@@ -622,35 +622,37 @@ export default function CheckoutScreen({
             )}
           </div>
 
-          {/* STEP 6: PAY ACTION BUTTON (Red Theme & Disabled when checkout is disabled) */}
-          <div className="pt-2 space-y-3">
-            <button
-              type="submit"
-              disabled={!canPay}
-              className={`w-full py-4 px-6 font-black text-base rounded-2xl transition-all flex items-center justify-center gap-2 ${
-                canPay
-                  ? "bg-[#cc142d] hover:bg-[#b00f24] active:bg-[#960a1c] text-white shadow-xl shadow-red-500/30 cursor-pointer transform active:scale-[0.99]"
-                  : "bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed shadow-none opacity-60"
-              }`}
-            >
-              {isProcessingMoyasar ? (
-                <span className="flex items-center gap-2 text-white">
-                  <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing via Moyasar Gateway...
-                </span>
-              ) : (
-                <>
-                  <Lock className="w-5 h-5 text-white/90" /> Pay {totalDueToday} {currency} with Moyasar
-                </>
-              )}
-            </button>
+          {/* STEP 6: PAY ACTION BUTTON (Rendered ONLY if saved card is selected; HIDDEN when Moyasar SDK form is active) */}
+          {!useMoyasarForm && (
+            <div className="pt-2 space-y-3">
+              <button
+                type="submit"
+                disabled={!canPay}
+                className={`w-full py-4 px-6 font-black text-base rounded-2xl transition-all flex items-center justify-center gap-2 ${
+                  canPay
+                    ? "bg-[#cc142d] hover:bg-[#b00f24] active:bg-[#960a1c] text-white shadow-xl shadow-red-500/30 cursor-pointer transform active:scale-[0.99]"
+                    : "bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed shadow-none opacity-60"
+                }`}
+              >
+                {isProcessingMoyasar ? (
+                  <span className="flex items-center gap-2 text-white">
+                    <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing via Moyasar Gateway...
+                  </span>
+                ) : (
+                  <>
+                    <Lock className="w-5 h-5 text-white/90" /> Pay {totalDueToday} {currency} with Saved Card
+                  </>
+                )}
+              </button>
 
-            {!canPay && (
-              <p className="text-xs text-amber-400 text-center font-bold flex items-center justify-center gap-1.5 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/40">
-                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                Please check both mandatory agreement boxes in Step 4 to enable the Pay button.
-              </p>
-            )}
-          </div>
+              {!canPay && (
+                <p className="text-xs text-amber-400 text-center font-bold flex items-center justify-center gap-1.5 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/40">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  Please check both mandatory agreement boxes in Step 4 to enable the Pay button.
+                </p>
+              )}
+            </div>
+          )}
 
         </form>
       ) : (

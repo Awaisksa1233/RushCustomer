@@ -84,9 +84,17 @@ export default function CheckoutScreen({
     defaultSavedCard ? defaultSavedCard.id : null
   );
 
+  // Payment Choice State ("applepay" | "card" | "saved")
+  const [paymentChoice, setPaymentChoice] = useState<"applepay" | "card" | "saved">("applepay");
+
   // "If card is present, moyasar form should be hidden"
   // When a saved card is selected, useMoyasarForm is false.
-  const [useMoyasarForm, setUseMoyasarForm] = useState<boolean>(!defaultSavedCard);
+  const [useMoyasarForm, setUseMoyasarForm] = useState<boolean>(false);
+
+  // Sync useMoyasarForm with paymentChoice
+  useEffect(() => {
+    setUseMoyasarForm(paymentChoice === "card");
+  }, [paymentChoice]);
 
   // Moyasar SDK State
   const [isProcessingMoyasar, setIsProcessingMoyasar] = useState(false);
@@ -596,68 +604,97 @@ export default function CheckoutScreen({
             </div>
           </div>
 
-          {/* STEP 5: CARD & PAYMENT SELECTION */}
+          {/* STEP 5: PAYMENT METHOD SELECTION */}
           <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 shadow-xl space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <span className="text-xs font-extrabold text-red-500 uppercase tracking-wider flex items-center gap-1.5">
-                <CreditCard className="w-4 h-4" /> 5. Payment Method & Apple Pay
+                <CreditCard className="w-4 h-4" /> 5. Select Payment Method
               </span>
               <span className="text-[10px] font-bold text-slate-400">Moyasar Gateway</span>
             </div>
 
-            {/* Native Apple Pay 1-Click Subscribe Button */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
-                  Express 1-Click Apple Pay:
-                </span>
-                <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                  Instant Checkout
-                </span>
-              </div>
-
+            {/* Payment Choice Selector Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Option A: Apple Pay */}
               <button
                 type="button"
-                disabled={!canPay}
-                onClick={handleApplePaySubscribe}
-                className={`w-full py-4 px-6 rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2.5 shadow-2xl border ${
-                  canPay
-                    ? "bg-black hover:bg-slate-900 text-white border-slate-700 cursor-pointer transform active:scale-[0.99]"
-                    : "bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed opacity-50 shadow-none"
+                onClick={() => {
+                  setPaymentChoice("applepay");
+                  setUseMoyasarForm(false);
+                }}
+                className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
+                  paymentChoice === "applepay"
+                    ? "bg-black border-slate-600 text-white shadow-xl shadow-slate-900/50 ring-2 ring-slate-500/50"
+                    : "bg-slate-800/50 border-slate-700/80 text-slate-300 hover:border-slate-600"
                 }`}
               >
-                <span className="text-2xl leading-none font-serif"></span>
-                <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-black border border-slate-700 flex items-center justify-center text-white text-xl font-serif">
+                    
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-sm text-white block">Apple Pay</span>
+                    <span className="text-[11px] text-slate-400 font-medium">1-Click Express Checkout</span>
+                  </div>
+                </div>
+                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                  paymentChoice === "applepay" ? "border-white bg-white text-black" : "border-slate-600"
+                }`}>
+                  {paymentChoice === "applepay" && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
               </button>
 
-              {!canPay && (
-                <p className="text-[11px] text-amber-400 text-center font-semibold">
-                  Check both agreement boxes in Step 4 to enable Apple Pay
-                </p>
-              )}
+              {/* Option B: Credit / Mada / Debit Card */}
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentChoice("card");
+                  setUseMoyasarForm(true);
+                }}
+                className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
+                  paymentChoice === "card"
+                    ? "bg-red-950/30 border-red-500 text-white shadow-md shadow-red-500/10 ring-2 ring-red-500/40"
+                    : "bg-slate-800/50 border-slate-700/80 text-slate-300 hover:border-slate-600"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-red-950/60 border border-red-500/40 flex items-center justify-center text-red-400">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-sm text-white block">Credit / Debit / Mada</span>
+                    <span className="text-[11px] text-slate-400 font-medium">Official Moyasar Form</span>
+                  </div>
+                </div>
+                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                  paymentChoice === "card" ? "border-red-500 bg-red-600 text-white" : "border-slate-600"
+                }`}>
+                  {paymentChoice === "card" && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
+              </button>
             </div>
 
-            {/* Saved Card Selection List */}
+            {/* Saved Card Option (If Saved Cards Exist) */}
             {paymentMethods.length > 0 && (
-              <div className="space-y-3">
+              <div className="pt-2 space-y-3 border-t border-slate-800/80">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Select Card on File:
+                  Or Charge Saved Card on File:
                 </span>
-
                 <div className="grid grid-cols-1 gap-2.5">
                   {paymentMethods.map((card) => {
-                    const isSelected = !useMoyasarForm && selectedSavedCardId === card.id;
+                    const isSelected = paymentChoice === "saved" && selectedSavedCardId === card.id;
                     return (
                       <button
                         key={card.id}
                         type="button"
                         onClick={() => {
                           setSelectedSavedCardId(card.id);
+                          setPaymentChoice("saved");
                           setUseMoyasarForm(false);
                         }}
                         className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
                           isSelected
-                            ? "bg-red-950/30 border-red-500 text-white shadow-md shadow-red-500/10"
+                            ? "bg-red-950/30 border-red-500 text-white shadow-md shadow-red-500/10 ring-2 ring-red-500/40"
                             : "bg-slate-800/50 border-slate-700/80 text-slate-300 hover:border-slate-600"
                         }`}
                       >
@@ -705,53 +742,32 @@ export default function CheckoutScreen({
                         <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                           isSelected ? "border-red-500 bg-red-600 text-white" : "border-slate-600"
                         }`}>
-                          {isSelected && <Check className="w-3 h-3" />}
+                          {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Option to Add / Use New Card */}
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUseMoyasarForm(!useMoyasarForm);
-                      if (!useMoyasarForm) setSelectedSavedCardId(null);
-                      else if (defaultSavedCard) setSelectedSavedCardId(defaultSavedCard.id);
-                    }}
-                    className="text-xs text-red-400 hover:text-red-300 font-extrabold flex items-center gap-1.5 cursor-pointer underline"
-                  >
-                    <PlusCircle className="w-4 h-4 text-red-500" />
-                    {useMoyasarForm ? "Use saved card instead" : "+ Add / Pay with New Card via Moyasar SDK"}
-                  </button>
-                </div>
               </div>
             )}
 
-            {/* IF CARD IS PRESENT, MOYASAR FORM IS HIDDEN (Renders ONLY when useMoyasarForm is true) */}
-            {useMoyasarForm ? (
+            {/* Moyasar SDK Form Rendered when paymentChoice is "card" */}
+            {paymentChoice === "card" && (
               <div className="pt-3 space-y-3 border-t border-slate-800">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <span className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider block">
-                    Official Moyasar Payment Form:
+                    Official Moyasar Card Form:
                   </span>
                   
-                  {/* Accepted Payment Scheme Logos: Mada, Visa, Mastercard */}
+                  {/* Accepted Payment Scheme Logos */}
                   <div className="flex items-center gap-2">
-                    {/* Mada Logo */}
                     <div className="flex items-center gap-1 bg-emerald-800 text-white px-2.5 py-1 rounded-lg border border-emerald-500/40 text-[10px] font-black tracking-wide shadow-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
                       <span>مدى mada</span>
                     </div>
-
-                    {/* Visa Official Logo */}
                     <div className="bg-[#1A1F71] text-white px-3 py-1 rounded-lg border border-blue-400/40 text-[11px] font-black italic tracking-widest shadow-sm font-serif">
                       VISA
                     </div>
-
-                    {/* Mastercard Official Graphic Logo */}
                     <div className="bg-slate-950 text-white px-2.5 py-1 rounded-lg border border-slate-700/80 flex items-center gap-1.5 shadow-sm">
                       <div className="flex -space-x-1.5 items-center">
                         <div className="w-3.5 h-3.5 rounded-full bg-[#EB001B]" />
@@ -764,17 +780,34 @@ export default function CheckoutScreen({
 
                 <div className={`mysr-form w-full rounded-2xl p-2 bg-white transition-all ${!canPay ? "mysr-btn-disabled" : ""}`} />
               </div>
-            ) : (
-              <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-xs text-emerald-400 font-semibold flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Selected saved card on file will be charged automatically via Moyasar recurring vault.</span>
-              </div>
             )}
           </div>
 
-          {/* STEP 6: PAY ACTION BUTTON (Rendered ONLY if saved card is selected; HIDDEN when Moyasar SDK form is active) */}
-          {!useMoyasarForm && (
-            <div className="pt-2 space-y-3">
+          {/* STEP 6: DYNAMIC PAY ACTION BUTTON (Updates based on selected payment choice) */}
+          <div className="pt-2 space-y-3">
+            {paymentChoice === "applepay" ? (
+              <button
+                type="button"
+                disabled={!canPay}
+                onClick={handleApplePaySubscribe}
+                className={`w-full py-4 px-6 rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2.5 shadow-2xl border ${
+                  canPay
+                    ? "bg-black hover:bg-slate-900 text-white border-slate-700 cursor-pointer transform active:scale-[0.99] hover:border-slate-500"
+                    : "bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed opacity-50 shadow-none"
+                }`}
+              >
+                {isProcessingMoyasar ? (
+                  <span className="flex items-center gap-2 text-white">
+                    <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing Apple Pay...
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-2xl leading-none font-serif"></span>
+                    <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                  </>
+                )}
+              </button>
+            ) : (
               <button
                 type="submit"
                 disabled={!canPay}
@@ -786,23 +819,26 @@ export default function CheckoutScreen({
               >
                 {isProcessingMoyasar ? (
                   <span className="flex items-center gap-2 text-white">
-                    <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing via Moyasar Gateway...
+                    <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing Payment...
                   </span>
                 ) : (
                   <>
-                    <Lock className="w-5 h-5 text-white/90" /> Pay {totalDueToday} {currency} with Saved Card
+                    <Lock className="w-5 h-5 text-white/90" />
+                    {paymentChoice === "saved"
+                      ? `Pay ${totalDueToday} ${currency} with Saved Card`
+                      : `Subscribe & Pay ${totalDueToday} ${currency}`}
                   </>
                 )}
               </button>
+            )}
 
-              {!canPay && (
-                <p className="text-xs text-amber-400 text-center font-bold flex items-center justify-center gap-1.5 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/40">
-                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                  Please check both mandatory agreement boxes in Step 4 to enable the Pay button.
-                </p>
-              )}
-            </div>
-          )}
+            {!canPay && (
+              <p className="text-xs text-amber-400 text-center font-bold flex items-center justify-center gap-1.5 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/40">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                Please check both mandatory agreement boxes in Step 4 to enable the Pay button.
+              </p>
+            )}
+          </div>
 
         </form>
       ) : (

@@ -278,9 +278,9 @@ export default function CheckoutScreen({
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8 pb-28 sm:pb-8 px-2 sm:px-0">
       {!moyasarReceipt ? (
-        <form onSubmit={handleCompletePayment} className="space-y-6">
+        <form onSubmit={handleCompletePayment} className="space-y-5 sm:space-y-6">
           
           {/* Header Badge */}
           <div className="flex items-center justify-between border-b border-red-500/20 pb-4">
@@ -836,6 +836,62 @@ export default function CheckoutScreen({
               <p className="text-xs text-amber-400 text-center font-bold flex items-center justify-center gap-1.5 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/40">
                 <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
                 Please check both mandatory agreement boxes in Step 4 to enable the Pay button.
+              </p>
+            )}
+          </div>
+
+          {/* MOBILE STICKY FIXED BOTTOM PAY BAR (Thumb Zone Optimized) */}
+          <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 z-50 shadow-2xl space-y-1.5">
+            {paymentChoice === "applepay" ? (
+              <button
+                type="button"
+                disabled={!canPay}
+                onClick={handleApplePaySubscribe}
+                className={`w-full py-3.5 px-4 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2.5 shadow-xl border ${
+                  canPay
+                    ? "bg-black text-white border-slate-700 active:scale-[0.98]"
+                    : "bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed opacity-50 shadow-none"
+                }`}
+              >
+                {isProcessingMoyasar ? (
+                  <span className="flex items-center gap-2 text-white text-xs">
+                    <Shield className="w-4 h-4 animate-spin text-amber-400" /> Processing Apple Pay...
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-xl leading-none font-serif"></span>
+                    <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!canPay}
+                className={`w-full py-3.5 px-4 font-black text-sm rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  canPay
+                    ? "bg-[#c91e2f] active:bg-[#b01725] text-white shadow-xl shadow-red-500/30 active:scale-[0.98]"
+                    : "bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed shadow-none opacity-60"
+                }`}
+              >
+                {isProcessingMoyasar ? (
+                  <span className="flex items-center gap-2 text-white text-xs">
+                    <Shield className="w-4 h-4 animate-spin text-amber-400" /> Processing Payment...
+                  </span>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 text-white/90" />
+                    {paymentChoice === "saved"
+                      ? `Pay ${totalDueToday} ${currency}`
+                      : `Subscribe & Pay ${totalDueToday} ${currency}`}
+                  </>
+                )}
+              </button>
+            )}
+
+            {!canPay && (
+              <p className="text-[10px] text-amber-400 text-center font-bold">
+                Check mandatory agreement boxes in Step 4 to enable Pay button
               </p>
             )}
           </div>

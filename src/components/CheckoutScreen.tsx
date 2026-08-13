@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
   ShieldCheck, 
@@ -18,7 +18,10 @@ import {
   Percent,
   ChevronRight,
   PlusCircle,
-  CheckSquare
+  CheckSquare,
+  QrCode,
+  Smartphone,
+  ExternalLink
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { SubscriptionPlan } from "@/types/plan";
@@ -73,6 +76,22 @@ export default function CheckoutScreen({
 
   const [promoError, setPromoError] = useState<string | null>(null);
   const [applePayError, setApplePayError] = useState<string | null>(null);
+
+  // Apple Pay QR Code State (for non-Apple devices)
+  const [showApplePayQR, setShowApplePayQR] = useState(false);
+  const [isAppleDevice, setIsAppleDevice] = useState(true);
+  const qrModalRef = useRef<HTMLDivElement>(null);
+
+  // Detect Apple device on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const ua = navigator.userAgent.toLowerCase();
+      const isApple = /iphone|ipad|ipod|macintosh|mac os x/.test(ua) && 
+                      (navigator.maxTouchPoints > 0 || /safari/.test(ua));
+      const hasApplePay = !!(window as any).ApplePaySession;
+      setIsAppleDevice(isApple || hasApplePay);
+    }
+  }, []);
 
   // Mandatory Dual Agreement State
   const [agreedTerms, setAgreedTerms] = useState(false);
@@ -149,6 +168,67 @@ export default function CheckoutScreen({
     }
   }, [useMoyasarForm, totalDueToday, selectedPlan, currency]);
 
+  // Build dynamic Apple Pay line items based on active promo
+  const buildApplePayLineItems = () => {
+    const items: { label: string; amount: string; type: "final" | "pending" }[] = [];
+
+    if (appliedPromo?.type === "THREE_FOR_100") {
+      items.push({ label: `${selectedPlan.name} (Regular Price)`, amount: basePrice.toFixed(2), type: "final" });
+      items.push({ label: `Promo "${appliedPromo.code}" — 100 SAR/mo x3`, amount: `-${(basePrice - 100).toFixed(2)}`, type: "final" });
+    } else if (appliedPromo?.type === "PERCENT_50") {
+      items.push({ label: `${selectedPlan.name} (Regular Price)`, amount: basePrice.toFixed(2), type: "final" });
+      items.push({ label: `50% OFF First Month (${appliedPromo.code})`, amount: `-${savingsAmount.toFixed(2)}`, type: "final" });
+    } else if (appliedPromo?.type === "PAY_2_GET_3RD_FREE") {
+      items.push({ label: `${selectedPlan.name} — Month 1`, amount: basePrice.toFixed(2), type: "final" });
+      items.push({ label: `3rd Month FREE (${appliedPromo.code})`, amount: "0.00", type: "pending" });
+    } else {
+      items.push({ label: `${selectedPlan.name} Subscription`, amount: basePrice.toFixed(2), type: "final" });
+    }
+
+    return items;
+  };
+
+  // Build Apple Pay recurringPaymentRequest
+  const buildRecurringPaymentRequest = () => {
+    const recurring: any = {
+      paymentDescription: `Rush Wash — ${selectedPlan.name} Monthly Subscription`,
+      regularBilling: {
+        label: `Rush Wash - ${selectedPlan.name}`,
+        amount: basePrice.toFixed(2),
+        paymentTiming: "recurring",
+        intervalUnit: "month",
+        intervalCount: 1,
+      },
+      managementURL: "https://rush.com.sa/account",
+      billingAgreement: `You will be charged ${basePrice} ${currency}/month for ${selectedPlan.name}. Cancel anytime from your account settings.`,
+    };
+
+    // Add trial/intro billing for promo codes
+    if (appliedPromo?.type === "THREE_FOR_100") {
+      recurring.trialBilling = {
+        label: `Promo: 100 SAR/mo (First 3 Months)`,
+        amount: "100.00",
+        paymentTiming: "recurring",
+        intervalUnit: "month",
+        intervalCount: 1,
+      };
+      recurring.billingAgreement = `Promo ${appliedPromo.code}: 100 SAR/month for the first 3 months, then ${basePrice} ${currency}/month. Cancel anytime.`;
+    } else if (appliedPromo?.type === "PERCENT_50") {
+      recurring.trialBilling = {
+        label: `50% OFF First Month`,
+        amount: totalDueToday.toFixed(2),
+        paymentTiming: "immediate",
+        intervalUnit: "month",
+        intervalCount: 1,
+      };
+      recurring.billingAgreement = `Promo ${appliedPromo.code}: ${totalDueToday} ${currency} for the first month (50% off), then ${basePrice} ${currency}/month. Cancel anytime.`;
+    } else if (appliedPromo?.type === "PAY_2_GET_3RD_FREE") {
+      recurring.billingAgreement = `Promo ${appliedPromo.code}: Pay for months 1 & 2, get month 3 free. Then ${basePrice} ${currency}/month. Cancel anytime.`;
+    }
+
+    return recurring;
+  };
+
   // Handle Native Apple Pay 1-Click Subscription with Certificate Merchant Validation
   const handleApplePaySubscribe = async () => {
     if (!canPay) return;
@@ -160,18 +240,22 @@ export default function CheckoutScreen({
     // Check if native Apple Pay JS is supported in Safari / iOS
     if (ApplePaySession && ApplePaySession.canMakePayments()) {
       try {
-        const paymentRequest = {
+        const paymentRequest: any = {
           countryCode: "SA",
           currencyCode: currency,
           supportedNetworks: ["mada", "visa", "mastercard"],
           merchantCapabilities: ["supports3DS"],
+          lineItems: buildApplePayLineItems(),
           total: {
             label: `Rush Wash - ${selectedPlan.name}`,
-            amount: (totalDueToday).toFixed(2),
+            amount: totalDueToday.toFixed(2),
+            type: "final",
           },
+          recurringPaymentRequest: buildRecurringPaymentRequest(),
         };
 
-        const session = new ApplePaySession(3, paymentRequest);
+        // Use Apple Pay JS version 14 for recurring + lineItems support
+        const session = new ApplePaySession(14, paymentRequest);
 
         // Merchant Validation Callback (uses merchant_id.pem & merchant_id.key)
         session.onvalidatemerchant = async (event: any) => {
@@ -243,12 +327,14 @@ export default function CheckoutScreen({
       }
     }
 
-    // If device/browser does NOT support Apple Pay JS (e.g. Chrome on Windows)
+    // Non-Apple device: Show QR code modal instead of error
     setIsProcessingMoyasar(false);
-    setApplePayError("Apple Pay is only supported in Safari on iPhone, iPad, or Mac. Please use Safari on an Apple device, or use Credit Card below.");
-    setPaymentChoice("card");
-    setUseMoyasarForm(true);
+    setShowApplePayQR(true);
   };
+
+  // Generate Apple Pay checkout QR URL (links to rush.com.sa checkout on Safari)
+  const applePayQRUrl = `https://rush.com.sa/checkout?plan=${selectedPlan.id}&amount=${totalDueToday}&promo=${appliedPromo?.code || ""}&method=applepay`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(applePayQRUrl)}&bgcolor=0f172a&color=ffffff&format=svg`;
 
   // Dynamically enforce disabled state on Moyasar SDK inner button when agreements are incomplete
   useEffect(() => {
@@ -670,17 +756,26 @@ export default function CheckoutScreen({
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-black border border-slate-700 flex items-center justify-center text-white text-xl font-serif">
-                    
+                    
                   </div>
                   <div>
                     <span className="font-extrabold text-sm text-white block">Apple Pay</span>
-                    <span className="text-[11px] text-slate-400 font-medium">1-Click Express Checkout</span>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {isAppleDevice ? "1-Click Express Checkout" : "Scan QR on iPhone / iPad"}
+                    </span>
                   </div>
                 </div>
-                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                  paymentChoice === "applepay" ? "border-white bg-white text-black" : "border-slate-600"
-                }`}>
-                  {paymentChoice === "applepay" && <Check className="w-3 h-3 stroke-[3]" />}
+                <div className="flex items-center gap-2">
+                  {!isAppleDevice && (
+                    <span className="text-[9px] font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                      <QrCode className="w-3 h-3 inline mr-0.5" />QR
+                    </span>
+                  )}
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                    paymentChoice === "applepay" ? "border-white bg-white text-black" : "border-slate-600"
+                  }`}>
+                    {paymentChoice === "applepay" && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
                 </div>
               </button>
 
@@ -823,6 +918,105 @@ export default function CheckoutScreen({
             )}
           </div>
 
+          {/* Apple Pay QR Code Modal (for non-Apple devices) */}
+          {showApplePayQR && (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+              onClick={(e) => { if (e.target === e.currentTarget) setShowApplePayQR(false); }}
+            >
+              <motion.div
+                ref={qrModalRef}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-700 shadow-2xl max-w-sm w-full space-y-5 relative"
+              >
+                {/* Close */}
+                <button
+                  type="button"
+                  onClick={() => setShowApplePayQR(false)}
+                  className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <div className="w-14 h-14 rounded-2xl bg-black border border-slate-700 flex items-center justify-center text-white text-3xl font-serif mx-auto shadow-lg">
+                    
+                  </div>
+                  <h3 className="text-lg font-black text-white">Apple Pay on iPhone</h3>
+                  <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                    Scan the QR code below with your iPhone or iPad camera to complete the payment with Apple Pay.
+                  </p>
+                </div>
+
+                {/* QR Code */}
+                <div className="bg-white rounded-2xl p-5 mx-auto w-fit shadow-inner">
+                  <img
+                    src={qrImageUrl}
+                    alt="Scan to pay with Apple Pay"
+                    width={220}
+                    height={220}
+                    className="rounded-lg"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                </div>
+
+                {/* Payment Summary */}
+                <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/80 space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-semibold">Plan:</span>
+                    <span className="text-white font-bold">{selectedPlan.name}</span>
+                  </div>
+                  {appliedPromo && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400 font-semibold">Promo:</span>
+                      <span className="text-emerald-400 font-bold font-mono">{appliedPromo.code}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs border-t border-slate-700 pt-2">
+                    <span className="text-slate-400 font-semibold">Amount Due:</span>
+                    <span className="text-white font-black text-sm">{totalDueToday} {currency}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-semibold">Renewal:</span>
+                    <span className="text-slate-300 font-semibold">{basePrice} {currency}/month</span>
+                  </div>
+                </div>
+
+                {/* Instructions */}
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2.5 text-xs text-slate-300">
+                    <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-white shrink-0 mt-0.5">1</div>
+                    <span className="font-medium">Open your <strong className="text-white">iPhone Camera</strong> and point it at the QR code</span>
+                  </div>
+                  <div className="flex items-start gap-2.5 text-xs text-slate-300">
+                    <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-white shrink-0 mt-0.5">2</div>
+                    <span className="font-medium">Tap the notification to open in <strong className="text-white">Safari</strong></span>
+                  </div>
+                  <div className="flex items-start gap-2.5 text-xs text-slate-300">
+                    <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-white shrink-0 mt-0.5">3</div>
+                    <span className="font-medium">Complete payment with <strong className="text-white">Face ID / Touch ID</strong></span>
+                  </div>
+                </div>
+
+                {/* Fallback link */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowApplePayQR(false);
+                    setPaymentChoice("card");
+                    setUseMoyasarForm(true);
+                  }}
+                  className="w-full py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  Or use Credit / Debit Card instead
+                </button>
+              </motion.div>
+            </div>
+          )}
+
           {/* STEP 6: DYNAMIC PAY ACTION BUTTON (Updates based on selected payment choice) */}
           <div className="pt-2 space-y-3">
             {paymentChoice === "applepay" ? (
@@ -840,10 +1034,15 @@ export default function CheckoutScreen({
                   <span className="flex items-center gap-2 text-white">
                     <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing Apple Pay...
                   </span>
+                ) : isAppleDevice ? (
+                  <>
+                    <span className="text-2xl leading-none font-serif"></span>
+                    <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                  </>
                 ) : (
                   <>
-                    <span className="text-2xl leading-none font-serif"></span>
-                    <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                    <QrCode className="w-5 h-5" />
+                    <span>Pay with Apple Pay — Scan QR ({totalDueToday} {currency})</span>
                   </>
                 )}
               </button>
@@ -897,10 +1096,15 @@ export default function CheckoutScreen({
                   <span className="flex items-center gap-2 text-white text-xs">
                     <Shield className="w-4 h-4 animate-spin text-amber-400" /> Processing Apple Pay...
                   </span>
+                ) : isAppleDevice ? (
+                  <>
+                    <span className="text-xl leading-none font-serif"></span>
+                    <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                  </>
                 ) : (
                   <>
-                    <span className="text-xl leading-none font-serif"></span>
-                    <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                    <QrCode className="w-4 h-4" />
+                    <span>Apple Pay QR ({totalDueToday} {currency})</span>
                   </>
                 )}
               </button>

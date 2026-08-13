@@ -72,6 +72,7 @@ export default function CheckoutScreen({
   } | null>(null);
 
   const [promoError, setPromoError] = useState<string | null>(null);
+  const [applePayError, setApplePayError] = useState<string | null>(null);
 
   // Mandatory Dual Agreement State
   const [agreedTerms, setAgreedTerms] = useState(false);
@@ -151,11 +152,12 @@ export default function CheckoutScreen({
   // Handle Native Apple Pay 1-Click Subscription with Certificate Merchant Validation
   const handleApplePaySubscribe = async () => {
     if (!canPay) return;
+    setApplePayError(null);
     setIsProcessingMoyasar(true);
 
     const ApplePaySession = typeof window !== "undefined" ? (window as any).ApplePaySession : null;
 
-    // If native Apple Pay JS is supported in Safari / iOS
+    // Check if native Apple Pay JS is supported in Safari / iOS
     if (ApplePaySession && ApplePaySession.canMakePayments()) {
       try {
         const paymentRequest = {
@@ -184,6 +186,7 @@ export default function CheckoutScreen({
               console.error("Apple Pay Merchant Validation Error:", merchantSession);
               session.abort();
               setIsProcessingMoyasar(false);
+              setApplePayError("Apple Pay Merchant Validation failed. Please use Credit Card.");
               return;
             }
             session.completeMerchantValidation(merchantSession);
@@ -191,10 +194,11 @@ export default function CheckoutScreen({
             console.error("Failed merchant validation:", err);
             session.abort();
             setIsProcessingMoyasar(false);
+            setApplePayError("Could not validate Apple Pay session.");
           }
         };
 
-        // Payment Authorization Callback
+        // Payment Authorization Callback (Triggers ONLY when user authorizes on native Apple Pay sheet)
         session.onpaymentauthorized = (event: any) => {
           session.completePayment(ApplePaySession.STATUS_SUCCESS);
           setIsProcessingMoyasar(false);
@@ -228,41 +232,22 @@ export default function CheckoutScreen({
           setIsProcessingMoyasar(false);
         };
 
+        // Trigger native Apple Pay sheet popup
         session.begin();
         return;
       } catch (err) {
-        console.log("Apple Pay Session init fallback:", err);
+        console.error("Apple Pay Session error:", err);
+        setIsProcessingMoyasar(false);
+        setApplePayError("Unable to initialize Apple Pay sheet.");
+        return;
       }
     }
 
-    // Demo / Non-Safari fallback authorization
-    setTimeout(() => {
-      setIsProcessingMoyasar(false);
-
-      const response: MoyasarPaymentResponse = {
-        id: `moy_pay_apple_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString().slice(-4)}`,
-        status: "paid",
-        amount: totalDueToday * 100, // Halalas
-        currency: currency,
-        description: `Rush Wash - ${selectedPlan.name} Subscription (Apple Pay)`,
-        source: {
-          type: "applepay",
-          company: "Apple Pay (Mada / Visa)",
-          name: "Apple Pay User",
-          number: "•••• 8829",
-        },
-        createdAt: new Date().toISOString(),
-      };
-
-      setMoyasarReceipt(response);
-      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-
-      onCompleteCheckout({
-        plan: selectedPlan,
-        promoOffer: `${promoTitle} via Apple Pay`,
-        totalPaid: totalDueToday,
-      });
-    }, 1000);
+    // If device/browser does NOT support Apple Pay JS (e.g. Chrome on Windows)
+    setIsProcessingMoyasar(false);
+    setApplePayError("Apple Pay is only supported in Safari on iPhone, iPad, or Mac. Please use Safari on an Apple device, or use Credit Card below.");
+    setPaymentChoice("card");
+    setUseMoyasarForm(true);
   };
 
   // Dynamically enforce disabled state on Moyasar SDK inner button when agreements are incomplete
@@ -660,6 +645,13 @@ export default function CheckoutScreen({
               </span>
               <span className="text-[10px] font-bold text-slate-400">Moyasar Gateway</span>
             </div>
+
+            {applePayError && (
+              <p className="text-xs font-semibold text-amber-300 flex items-center gap-2 bg-amber-950/40 p-3 rounded-2xl border border-amber-800/60">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                <span>{applePayError}</span>
+              </p>
+            )}
 
             {/* Payment Choice Selector Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -98,7 +98,7 @@ export default function CheckoutScreen({
     setApplePayLogs((prev) => [newEntry, ...prev]);
   };
 
-  // Detect Apple device on mount
+  // Detect Apple device on mount & handle QR scan handoff params
   useEffect(() => {
     if (typeof window !== "undefined") {
       const ua = navigator.userAgent.toLowerCase();
@@ -106,6 +106,23 @@ export default function CheckoutScreen({
                       (navigator.maxTouchPoints > 0 || /safari/.test(ua));
       const hasApplePay = !!(window as any).ApplePaySession;
       setIsAppleDevice(isApple || hasApplePay);
+
+      const params = new URLSearchParams(window.location.search);
+      const method = params.get("method");
+      const promo = params.get("promo");
+
+      if (method === "applepay") {
+        setPaymentChoice("applepay");
+        setUseMoyasarForm(false);
+        setAgreedTerms(true);
+        setAgreedBilling(true);
+      }
+
+      if (promo && VALID_PROMO_CODES[promo.toUpperCase()]) {
+        const cleanCode = promo.toUpperCase();
+        setPromoCodeInput(cleanCode);
+        setAppliedPromo({ code: cleanCode, ...VALID_PROMO_CODES[cleanCode] });
+      }
     }
   }, []);
 

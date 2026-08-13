@@ -27,6 +27,7 @@ import {
 import confetti from "canvas-confetti";
 import { SubscriptionPlan } from "@/types/plan";
 import { PaymentMethod, MoyasarPaymentResponse } from "@/types/payment";
+import ApplePayDebugWindow, { ApplePayLogEntry } from "@/components/ApplePayDebugWindow";
 
 interface CheckoutScreenProps {
   selectedPlan: SubscriptionPlan;
@@ -83,6 +84,19 @@ export default function CheckoutScreen({
   const [isAppleDevice, setIsAppleDevice] = useState(true);
   const [showDebugSheet, setShowDebugSheet] = useState(false);
   const qrModalRef = useRef<HTMLDivElement>(null);
+
+  // Apple Pay Live Debug Window State
+  const [isApplePayDebugOpen, setIsApplePayDebugOpen] = useState(false);
+  const [applePayLogs, setApplePayLogs] = useState<ApplePayLogEntry[]>([]);
+
+  const addApplePayLog = (entry: Omit<ApplePayLogEntry, "id" | "timestamp">) => {
+    const newEntry: ApplePayLogEntry = {
+      id: Math.random().toString(36).substring(2, 9),
+      timestamp: new Date().toLocaleTimeString(),
+      ...entry,
+    };
+    setApplePayLogs((prev) => [newEntry, ...prev]);
+  };
 
   // Detect Apple device on mount
   useEffect(() => {
@@ -237,10 +251,28 @@ export default function CheckoutScreen({
     setApplePayError(null);
     setIsProcessingMoyasar(true);
 
+    addApplePayLog({
+      type: "info",
+      message: "Initiating Apple Pay Checkout",
+      details: { plan: selectedPlan.name, totalDueToday, currency, promo: appliedPromo?.code || "None" },
+    });
+
     const ApplePaySession = typeof window !== "undefined" ? (window as any).ApplePaySession : null;
+
+    if (!ApplePaySession) {
+      addApplePayLog({
+        type: "warn",
+        message: "ApplePaySession object not defined in window (Non-Safari / Non-iOS device)",
+      });
+    }
 
     // Check if native Apple Pay JS is supported in Safari / iOS
     if (ApplePaySession && ApplePaySession.canMakePayments()) {
+      addApplePayLog({
+        type: "success",
+        message: "ApplePaySession.canMakePayments() returned TRUE. Device supported.",
+      });
+
       try {
         const paymentRequest: any = {
           countryCode: "SA",
@@ -256,27 +288,63 @@ export default function CheckoutScreen({
           recurringPaymentRequest: buildRecurringPaymentRequest(),
         };
 
+        addApplePayLog({
+          type: "info",
+          message: "Created ApplePayPaymentRequest v14 Payload",
+          details: paymentRequest,
+        });
+
         // Use Apple Pay JS version 14 for recurring + lineItems support
+        addApplePayLog({
+          type: "info",
+          message: "Constructing new ApplePaySession(14, paymentRequest)...",
+        });
+
         const session = new ApplePaySession(14, paymentRequest);
 
         // Merchant Validation Callback (uses merchant_id.pem & merchant_id.key)
         session.onvalidatemerchant = async (event: any) => {
+          addApplePayLog({
+            type: "info",
+            message: "Native Callback: session.onvalidatemerchant triggered by Apple",
+            details: { validationURL: event.validationURL },
+          });
+
           try {
             const res = await fetch("/api/applepay/validate-session", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ validationUrl: event.validationURL }),
             });
+
             const merchantSession = await res.json();
+
             if (merchantSession.error) {
+              addApplePayLog({
+                type: "error",
+                message: "Backend merchant validation failed!",
+                details: { status: res.status, merchantSession },
+              });
               console.error("Apple Pay Merchant Validation Error:", merchantSession);
               session.abort();
               setIsProcessingMoyasar(false);
               setApplePayError("Apple Pay Merchant Validation failed. Please use Credit Card.");
               return;
             }
+
+            addApplePayLog({
+              type: "success",
+              message: "Backend merchant session validated successfully. Completing merchant validation with Apple...",
+              details: { merchantSession },
+            });
+
             session.completeMerchantValidation(merchantSession);
-          } catch (err) {
+          } catch (err: any) {
+            addApplePayLog({
+              type: "error",
+              message: `Failed merchant validation API call: ${err.message}`,
+              details: { error: err.message },
+            });
             console.error("Failed merchant validation:", err);
             session.abort();
             setIsProcessingMoyasar(false);
@@ -286,6 +354,12 @@ export default function CheckoutScreen({
 
         // Payment Authorization Callback (Triggers ONLY when user authorizes on native Apple Pay sheet)
         session.onpaymentauthorized = (event: any) => {
+          addApplePayLog({
+            type: "success",
+            message: "Native Callback: session.onpaymentauthorized triggered! Payment authorized by user.",
+            details: event.payment,
+          });
+
           session.completePayment(ApplePaySession.STATUS_SUCCESS);
           setIsProcessingMoyasar(false);
 
@@ -315,13 +389,27 @@ export default function CheckoutScreen({
         };
 
         session.oncancel = () => {
+          addApplePayLog({
+            type: "warn",
+            message: "Native Callback: session.oncancel triggered. User dismissed or cancelled Apple Pay sheet.",
+          });
           setIsProcessingMoyasar(false);
         };
 
         // Trigger native Apple Pay sheet popup
+        addApplePayLog({
+          type: "info",
+          message: "Calling session.begin() to launch native Apple Pay sheet...",
+        });
+
         session.begin();
         return;
-      } catch (err) {
+      } catch (err: any) {
+        addApplePayLog({
+          type: "error",
+          message: `Apple Pay Session initialization error: ${err.message}`,
+          details: { error: err.message, stack: err.stack },
+        });
         console.error("Apple Pay Session error:", err);
         setIsProcessingMoyasar(false);
         setApplePayError("Unable to initialize Apple Pay sheet.");
@@ -330,6 +418,11 @@ export default function CheckoutScreen({
     }
 
     // Non-Apple device: Show QR code modal instead of error
+    addApplePayLog({
+      type: "warn",
+      message: "Non-Apple device or ApplePaySession unavailable. Opening Apple Pay QR Code modal.",
+    });
+
     setIsProcessingMoyasar(false);
     setShowApplePayQR(true);
   };
@@ -1352,6 +1445,46 @@ export default function CheckoutScreen({
           </button>
         </motion.div>
       )}
+
+      {/* Persistent Floating Apple Pay Debug Console Trigger */}
+      <button
+        type="button"
+        onClick={() => setIsApplePayDebugOpen(true)}
+        className="fixed bottom-20 left-4 z-[90] px-3.5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-2xl shadow-2xl flex items-center gap-2 border-2 border-amber-300 transform active:scale-95 transition-all cursor-pointer"
+      >
+        <Bug className="w-4 h-4 text-slate-950" />
+        <span>Apple Pay Debug</span>
+        {applePayLogs.length > 0 && (
+          <span className="w-5 h-5 rounded-full bg-slate-950 text-amber-300 text-[10px] flex items-center justify-center font-extrabold">
+            {applePayLogs.length}
+          </span>
+        )}
+      </button>
+
+      {/* On-Page Apple Pay Debug Console Modal */}
+      <ApplePayDebugWindow
+        isOpen={isApplePayDebugOpen}
+        onClose={() => setIsApplePayDebugOpen(false)}
+        logs={applePayLogs}
+        onClearLogs={() => setApplePayLogs([])}
+        onAddLog={addApplePayLog}
+        selectedPlan={selectedPlan}
+        totalDueToday={totalDueToday}
+        currency={currency}
+        paymentRequestData={{
+          countryCode: "SA",
+          currencyCode: currency,
+          supportedNetworks: ["mada", "visa", "mastercard"],
+          merchantCapabilities: ["supports3DS"],
+          lineItems: buildApplePayLineItems(),
+          total: {
+            label: `Rush Wash - ${selectedPlan.name}`,
+            amount: totalDueToday.toFixed(2),
+            type: "final",
+          },
+          recurringPaymentRequest: buildRecurringPaymentRequest(),
+        }}
+      />
     </div>
   );
 }

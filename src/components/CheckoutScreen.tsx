@@ -525,30 +525,11 @@ export default function CheckoutScreen({
                 </label>
               </div>
 
-              {/* Moyasar Pay Button */}
-              <button
-                type="submit"
-                disabled={!canPay}
-                className={`w-full py-3.5 px-5 font-extrabold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 ${
-                  canPay
-                    ? "bg-[#cc142d] hover:bg-[#b00f24] text-white shadow-lg shadow-red-500/25 cursor-pointer"
-                    : "bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed"
-                }`}
-              >
-                {isProcessingMoyasar ? (
-                  <span className="flex items-center gap-2 text-white">
-                    <Shield className="w-4 h-4 animate-spin text-amber-400" /> Verifying 3D Secure via Moyasar...
-                  </span>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 text-emerald-400" /> Pay {totalDueToday} {currency} with Moyasar
-                  </>
-                )}
-              </button>
+              </div>
 
               {!canPay && (
                 <p className="text-[10px] text-amber-400 text-center font-semibold flex items-center justify-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> Check both agreement boxes above to complete order
+                  <AlertCircle className="w-3 h-3" /> Check both agreement boxes above to enable payment form
                 </p>
               )}
 

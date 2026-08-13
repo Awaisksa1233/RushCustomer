@@ -560,15 +560,35 @@ export default function CheckoutScreen({
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white ${
-                            card.brand === "visa" ? "bg-blue-600" : "bg-red-600"
-                          }`}>
-                            {card.brand.toUpperCase()}
+                          <div className="w-12 h-9 shrink-0 rounded-xl flex items-center justify-center font-black text-xs text-white shadow-sm overflow-hidden border border-slate-700">
+                            {card.brand === "visa" && (
+                              <div className="w-full h-full bg-[#1A1F71] text-white text-[11px] font-black italic tracking-wider flex items-center justify-center font-serif">
+                                VISA
+                              </div>
+                            )}
+                            {card.brand === "mastercard" && (
+                              <div className="w-full h-full bg-slate-950 text-white flex items-center justify-center">
+                                <div className="flex -space-x-1.5 items-center">
+                                  <div className="w-3.5 h-3.5 rounded-full bg-[#EB001B]" />
+                                  <div className="w-3.5 h-3.5 rounded-full bg-[#F79E1B] opacity-90" />
+                                </div>
+                              </div>
+                            )}
+                            {card.brand === "mada" && (
+                              <div className="w-full h-full bg-emerald-800 text-white text-[10px] font-black flex items-center justify-center">
+                                مدى
+                              </div>
+                            )}
+                            {card.brand !== "visa" && card.brand !== "mastercard" && card.brand !== "mada" && (
+                              <div className="w-full h-full bg-slate-800 text-white text-[10px] font-bold uppercase flex items-center justify-center">
+                                {card.brand.slice(0, 3)}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-white">
-                                {card.brand.toUpperCase()} ending in {card.last4}
+                              <span className="font-bold text-sm text-white uppercase">
+                                {card.brand} ending in {card.last4}
                               </span>
                               {card.isDefault && (
                                 <span className="px-2 py-0.5 bg-slate-700 text-slate-300 text-[10px] font-bold rounded-md">

@@ -24,3 +24,32 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Official Moyasar Form Layout Refinements */
+.mysr-form {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+.mysr-form .mysr-form-group {
+  margin-bottom: 1.25rem !important;
+}
+
+.mysr-form button.mysr-btn {
+  background-color: #cc142d !important;
+  border-color: #cc142d !important;
+  border-radius: 1rem !important;
+  font-weight: 800 !important;
+  font-size: 0.95rem !important;
+  padding: 0.85rem 1.5rem !important;
+  box-shadow: 0 4px 14px rgba(204, 20, 45, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+.mysr-form button.mysr-btn:hover {
+  background-color: #b00f24 !important;
+  border-color: #b00f24 !important;
+  transform: translateY(-1px) !important;
+}

@@ -360,7 +360,7 @@ export default function CheckoutScreen({
               </div>
 
               {/* Official Moyasar JS SDK Container */}
-              <div className="mysr-form min-h-[160px] flex items-center justify-center border border-slate-100 rounded-2xl p-4 bg-slate-50/50" />
+              <div className="mysr-form w-full rounded-2xl p-2 bg-white" />
             </div>
 
           </div>

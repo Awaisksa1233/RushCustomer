@@ -141,7 +141,7 @@ export default function CheckoutScreen({
           amount: totalDueToday * 100, // halalas (cents)
           currency: currency,
           description: `Rush Wash - ${selectedPlan.name} Subscription`,
-          publishable_api_key: "pk_test_xxxxxxxxxxxxxxxxx",
+          publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_uVRcHBKku16yhUDrwUJ29FDvevjoCo571xJzjDW8",
           callback_url: "https://rush.com.sa/payment-result",
           methods: ["creditcard"],
           supported_networks: ["mada", "visa", "mastercard", "amex", "unionpay"]

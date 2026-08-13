@@ -525,8 +525,6 @@ export default function CheckoutScreen({
                 </label>
               </div>
 
-              </div>
-
               {!canPay && (
                 <p className="text-[10px] text-amber-400 text-center font-semibold flex items-center justify-center gap-1">
                   <AlertCircle className="w-3 h-3" /> Check both agreement boxes above to enable payment form

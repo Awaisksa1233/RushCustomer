@@ -64,23 +64,18 @@ body {
   transform: translateY(-1px) !important;
 }
 
-/* DISABLED Moyasar Pay Button state when agreements are unchecked */
-.mysr-form-disabled,
-.mysr-form-disabled *,
-.mysr-form-disabled button,
-.mysr-form-disabled input {
-  pointer-events: none !important;
-  opacity: 0.5 !important;
-  filter: grayscale(0.6) !important;
-  cursor: not-allowed !important;
-}
-
-.mysr-form-disabled button,
-.mysr-form-disabled button.mysr-btn,
-.mysr-form-disabled button[type="submit"] {
+/* DISABLED Moyasar Pay Button ONLY (Inputs remain 100% active and typing-enabled) */
+.mysr-btn-disabled button,
+.mysr-btn-disabled button.mysr-btn,
+.mysr-btn-disabled button[type="submit"],
+.mysr-form button:disabled,
+.mysr-form button[disabled] {
   background: #334155 !important;
   background-image: none !important;
   border-color: #475569 !important;
   box-shadow: none !important;
   color: #94a3b8 !important;
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
 }

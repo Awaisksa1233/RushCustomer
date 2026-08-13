@@ -131,7 +131,9 @@ export default function CheckoutScreen({
           publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_uVRcHBKku16yhUDrwUJ29FDvevjoCo571xJzjDW8",
           callback_url: "https://rush.com.sa/payment-result",
           methods: ["creditcard"],
-          supported_networks: ["mada", "visa", "mastercard", "amex", "unionpay"]
+          save_card: true,
+          savecard: true,
+          supported_networks: ["mada", "visa", "mastercard"]
         });
       } catch (err) {
         console.log("Moyasar init info:", err);
@@ -609,10 +611,26 @@ export default function CheckoutScreen({
             {/* IF CARD IS PRESENT, MOYASAR FORM IS HIDDEN (Renders ONLY when useMoyasarForm is true) */}
             {useMoyasarForm ? (
               <div className="pt-3 space-y-3 border-t border-slate-800">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Official Moyasar Payment Form:
-                </span>
-                <div className={`mysr-form w-full rounded-2xl p-2 bg-white transition-all ${!canPay ? "mysr-form-disabled opacity-50 pointer-events-none" : ""}`} />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider block">
+                    Official Moyasar Payment Form:
+                  </span>
+                  
+                  {/* Accepted Payment Schemes: Mada, Visa, Mastercard */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2.5 py-0.5 bg-emerald-800 text-white rounded text-[10px] font-black tracking-wide border border-emerald-500/30">
+                      مدى Mada
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-blue-700 text-white rounded text-[10px] font-black tracking-wider border border-blue-400/30">
+                      VISA
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-gradient-to-r from-red-600 to-amber-500 text-white rounded text-[10px] font-black tracking-wide border border-amber-400/30">
+                      Mastercard
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`mysr-form w-full rounded-2xl p-2 bg-white transition-all ${!canPay ? "mysr-btn-disabled" : ""}`} />
               </div>
             ) : (
               <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-xs text-emerald-400 font-semibold flex items-center gap-2">

@@ -1218,15 +1218,17 @@ export default function CheckoutScreen({
                   </button>
                 ) : (
                   <div className="relative w-full">
-                    {/* Native Webkit / Web Component button with type="subscribe" */}
                     <button
                       type="button"
                       disabled={!canPay}
                       onClick={handleApplePaySubscribe}
-                      className="apple-pay-subscribe-btn w-full py-4 px-6 rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2.5 shadow-2xl bg-black text-white border border-slate-700 hover:bg-slate-900 cursor-pointer transform active:scale-[0.99] hover:border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                      className="w-full h-[56px] px-6 rounded-xl font-medium text-lg transition-all flex items-center justify-center gap-2 shadow-xl bg-black text-white border border-slate-800 hover:bg-slate-900 cursor-pointer transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                     >
-                      <span className="text-2xl leading-none font-serif"></span>
-                      <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+                      <span className="text-base sm:text-lg font-medium tracking-tight text-white">Subscribe with</span>
+                      <span className="inline-flex items-center gap-1 font-serif text-xl font-black text-white leading-none">
+                        <span className="text-2xl font-serif"></span>
+                        <span className="font-sans font-bold tracking-tight text-xl">Pay</span>
+                      </span>
                     </button>
                   </div>
                 )}

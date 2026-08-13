@@ -36,3 +36,12 @@ export interface MoyasarPaymentResponse {
   };
   createdAt: string;
 }
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "apple-pay-button": any;
+      "app-clip-code": any;
+    }
+  }
+}

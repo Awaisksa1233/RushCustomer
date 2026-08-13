@@ -1207,32 +1207,33 @@ export default function CheckoutScreen({
 
           <div className="pt-2 space-y-3">
             {paymentChoice === "applepay" ? (
-              <button
-                type="button"
-                disabled={!canPay}
-                onClick={handleApplePaySubscribe}
-                className={`w-full py-4 px-6 rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2.5 shadow-2xl border ${
-                  canPay
-                    ? "bg-black hover:bg-slate-900 text-white border-slate-700 cursor-pointer transform active:scale-[0.99] hover:border-slate-500"
-                    : "bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed opacity-50 shadow-none"
-                }`}
-              >
+              <div className="w-full space-y-2">
                 {isProcessingMoyasar ? (
-                  <span className="flex items-center gap-2 text-white">
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full py-4 px-6 rounded-2xl font-black text-base bg-black text-white border border-slate-700 flex items-center justify-center gap-2.5 shadow-2xl opacity-80"
+                  >
                     <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing Apple Pay...
-                  </span>
-                ) : isAppleDevice ? (
-                  <>
-                    <span className="text-2xl leading-none font-serif"></span>
-                    <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
-                  </>
+                  </button>
                 ) : (
-                  <>
-                    <QrCode className="w-5 h-5" />
-                    <span>Pay with Apple Pay — Scan QR ({totalDueToday} {currency})</span>
-                  </>
+                  <apple-pay-button
+                    buttonstyle="black"
+                    type="subscribe"
+                    locale="en-US"
+                    onClick={handleApplePaySubscribe}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      height: "56px",
+                      borderRadius: "16px",
+                      cursor: canPay ? "pointer" : "not-allowed",
+                      opacity: canPay ? 1 : 0.5,
+                      pointerEvents: canPay ? "auto" : "none",
+                    }}
+                  />
                 )}
-              </button>
+              </div>
             ) : (
               <button
                 type="submit"

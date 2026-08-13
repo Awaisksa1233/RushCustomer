@@ -139,6 +139,36 @@ export default function CheckoutScreen({
     }
   }, [useMoyasarForm, totalDueToday, selectedPlan, currency]);
 
+  // Dynamically enforce disabled state on Moyasar SDK inner button when agreements are incomplete
+  useEffect(() => {
+    const applyMoyasarBtnStyles = () => {
+      const btn = document.querySelector(".mysr-form button, .mysr-form button.mysr-btn, .mysr-form button[type='submit']") as HTMLButtonElement | null;
+      if (btn) {
+        if (!canPay) {
+          btn.setAttribute("disabled", "true");
+          btn.style.opacity = "0.5";
+          btn.style.cursor = "not-allowed";
+          btn.style.pointerEvents = "none";
+          btn.style.background = "#334155";
+          btn.style.borderColor = "#475569";
+          btn.style.backgroundImage = "none";
+        } else {
+          btn.removeAttribute("disabled");
+          btn.style.opacity = "1";
+          btn.style.cursor = "pointer";
+          btn.style.pointerEvents = "auto";
+          btn.style.background = "#cc142d";
+          btn.style.borderColor = "#cc142d";
+          btn.style.backgroundImage = "linear-gradient(135deg, #cc142d 0%, #b00f24 100%)";
+        }
+      }
+    };
+
+    applyMoyasarBtnStyles();
+    const interval = setInterval(applyMoyasarBtnStyles, 300);
+    return () => clearInterval(interval);
+  }, [canPay, useMoyasarForm, totalDueToday]);
+
   // Apply promo code (1-click or input)
   const applyPromoDirectly = (code: string) => {
     const cleanCode = code.toUpperCase();
@@ -582,7 +612,7 @@ export default function CheckoutScreen({
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                   Official Moyasar Payment Form:
                 </span>
-                <div className="mysr-form w-full rounded-2xl p-2 bg-white" />
+                <div className={`mysr-form w-full rounded-2xl p-2 bg-white transition-all ${!canPay ? "mysr-form-disabled opacity-50 pointer-events-none" : ""}`} />
               </div>
             ) : (
               <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 text-xs text-emerald-400 font-semibold flex items-center gap-2">

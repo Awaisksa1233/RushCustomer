@@ -495,13 +495,47 @@ export default function CheckoutScreen({
                     </>
                   )}
 
-                  {!appliedPromo && (
+                  {appliedPromo?.type === "PAY_2_GET_3RD_FREE" && (
                     <>
                       <div className="flex justify-between text-emerald-400 font-semibold">
                         <span>Month 1 (Today):</span>
                         <span>{basePrice} {currency}</span>
                       </div>
                       <div className="flex justify-between text-slate-300">
+                        <span>Month 2 (Sep 11):</span>
+                        <span>{basePrice} {currency}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-400 font-extrabold">
+                        <span>Month 3 (Oct 11):</span>
+                        <span className="bg-emerald-500/20 px-1.5 py-0.5 rounded text-emerald-300">0 {currency} (FREE!)</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-700">
+                        <span>Month 4+ (Nov 11 onwards):</span>
+                        <span>{basePrice} {currency}/mo</span>
+                      </div>
+                    </>
+                  )}
+
+                  {appliedPromo?.type === "PERCENT_50" && (
+                    <>
+                      <div className="flex justify-between text-emerald-400 font-semibold">
+                        <span>Month 1 (Today - 50% OFF):</span>
+                        <span>{totalDueToday} {currency}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-300 pt-1 border-t border-slate-700">
+                        <span>Month 2+ (Sep 11 onwards):</span>
+                        <span>{basePrice} {currency}/mo</span>
+                      </div>
+                    </>
+                  )}
+
+                  {!appliedPromo && (
+                    <>
+                      <div className="flex justify-between text-emerald-400 font-semibold">
+                        <span>Month 1 (Today):</span>
+                        <span>{basePrice} {currency}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-300 pt-1 border-t border-slate-700">
                         <span>Month 2+ (Sep 11 onwards):</span>
                         <span>{basePrice} {currency}/mo</span>
                       </div>

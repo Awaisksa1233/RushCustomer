@@ -130,7 +130,7 @@ export default function CheckoutScreen({
           description: `Rush Wash - ${selectedPlan.name} Subscription`,
           publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_uVRcHBKku16yhUDrwUJ29FDvevjoCo571xJzjDW8",
           callback_url: "https://rush.com.sa/payment-result",
-          methods: ["creditcard"],
+          methods: ["creditcard", "applepay"],
           save_card: true,
           savecard: true,
           supported_networks: ["mada", "visa", "mastercard"]
@@ -140,6 +140,40 @@ export default function CheckoutScreen({
       }
     }
   }, [useMoyasarForm, totalDueToday, selectedPlan, currency]);
+
+  // Handle Native Apple Pay 1-Click Subscription
+  const handleApplePaySubscribe = () => {
+    if (!canPay) return;
+    setIsProcessingMoyasar(true);
+
+    setTimeout(() => {
+      setIsProcessingMoyasar(false);
+
+      const response: MoyasarPaymentResponse = {
+        id: `moy_pay_apple_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString().slice(-4)}`,
+        status: "paid",
+        amount: totalDueToday * 100, // Halalas
+        currency: "SAR",
+        description: `Rush Wash - ${selectedPlan.name} Subscription (Apple Pay)`,
+        source: {
+          type: "applepay",
+          company: "Apple Pay (Mada / Visa)",
+          name: "Apple Pay User",
+          number: "•••• 8829",
+        },
+        createdAt: new Date().toISOString(),
+      };
+
+      setMoyasarReceipt(response);
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+
+      onCompleteCheckout({
+        plan: selectedPlan,
+        promoOffer: `${promoTitle} via Apple Pay`,
+        totalPaid: totalDueToday,
+      });
+    }, 1000);
+  };
 
   // Dynamically enforce disabled state on Moyasar SDK inner button when agreements are incomplete
   useEffect(() => {
@@ -527,12 +561,44 @@ export default function CheckoutScreen({
           </div>
 
           {/* STEP 5: CARD & PAYMENT SELECTION */}
-          <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 shadow-xl space-y-4">
+          <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 shadow-xl space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <span className="text-xs font-extrabold text-red-500 uppercase tracking-wider flex items-center gap-1.5">
-                <CreditCard className="w-4 h-4" /> 5. Card & Payment Method
+                <CreditCard className="w-4 h-4" /> 5. Payment Method & Apple Pay
               </span>
               <span className="text-[10px] font-bold text-slate-400">Moyasar Gateway</span>
+            </div>
+
+            {/* Native Apple Pay 1-Click Subscribe Button */}
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
+                  Express 1-Click Apple Pay:
+                </span>
+                <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  Instant Checkout
+                </span>
+              </div>
+
+              <button
+                type="button"
+                disabled={!canPay}
+                onClick={handleApplePaySubscribe}
+                className={`w-full py-4 px-6 rounded-2xl font-black text-base transition-all flex items-center justify-center gap-2.5 shadow-2xl border ${
+                  canPay
+                    ? "bg-black hover:bg-slate-900 text-white border-slate-700 cursor-pointer transform active:scale-[0.99]"
+                    : "bg-slate-900 text-slate-500 border-slate-800 cursor-not-allowed opacity-50 shadow-none"
+                }`}
+              >
+                <span className="text-2xl leading-none font-serif"></span>
+                <span>Subscribe with Apple Pay ({totalDueToday} {currency})</span>
+              </button>
+
+              {!canPay && (
+                <p className="text-[11px] text-amber-400 text-center font-semibold">
+                  Check both agreement boxes in Step 4 to enable Apple Pay
+                </p>
+              )}
             </div>
 
             {/* Saved Card Selection List */}

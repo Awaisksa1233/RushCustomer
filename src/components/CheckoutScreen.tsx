@@ -207,7 +207,7 @@ export default function CheckoutScreen({
   // Build Apple Pay recurringPaymentRequest
   const buildRecurringPaymentRequest = () => {
     const now = new Date();
-    const regularStartDate = new Date(now);
+    const nextRenewalDate = new Date(now);
 
     const recurring: any = {
       paymentDescription: `Rush Wash — ${selectedPlan.name} Monthly Subscription`,
@@ -223,9 +223,9 @@ export default function CheckoutScreen({
     };
 
     if (appliedPromo?.type === "THREE_FOR_100") {
-      // 100 SAR/month for first 3 months. Regular billing starts in 3 months!
-      regularStartDate.setMonth(regularStartDate.getMonth() + 3);
-      recurring.regularBilling.recurringPaymentStartDate = regularStartDate.toISOString();
+      // 100 SAR/month for first 3 months. Standard rate starts in 3 months!
+      nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 3);
+      recurring.regularBilling.recurringPaymentStartDate = nextRenewalDate.toISOString();
 
       recurring.trialBilling = {
         label: `Promo: 100 SAR/month (First 3 Months)`,
@@ -234,11 +234,11 @@ export default function CheckoutScreen({
         intervalUnit: "month",
         intervalCount: 1,
       };
-      recurring.billingAgreement = `Promo ${appliedPromo.code}: 100 SAR/month for the first 3 months. Starting ${regularStartDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, standard rate of ${basePrice} ${currency}/month applies. Cancel anytime.`;
+      recurring.billingAgreement = `Promo ${appliedPromo.code}: 100 SAR/month for the first 3 months. Standard rate of ${basePrice} ${currency}/month resumes on ${nextRenewalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}. Cancel anytime.`;
     } else if (appliedPromo?.type === "PERCENT_50") {
-      // 50% OFF first month. Regular billing starts in 1 month!
-      regularStartDate.setMonth(regularStartDate.getMonth() + 1);
-      recurring.regularBilling.recurringPaymentStartDate = regularStartDate.toISOString();
+      // 50% OFF first month. Standard rate starts in 1 month!
+      nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1);
+      recurring.regularBilling.recurringPaymentStartDate = nextRenewalDate.toISOString();
 
       recurring.trialBilling = {
         label: `50% OFF First Month (${totalDueToday} ${currency})`,
@@ -247,12 +247,15 @@ export default function CheckoutScreen({
         intervalUnit: "month",
         intervalCount: 1,
       };
-      recurring.billingAgreement = `Promo ${appliedPromo.code}: First month 50% off (${totalDueToday} ${currency}). Starting ${regularStartDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, standard rate of ${basePrice} ${currency}/month applies. Cancel anytime.`;
+      recurring.billingAgreement = `Promo ${appliedPromo.code}: First month 50% off (${totalDueToday} ${currency}). Standard rate of ${basePrice} ${currency}/month resumes on ${nextRenewalDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}. Cancel anytime.`;
     } else if (appliedPromo?.type === "PAY_2_GET_3RD_FREE") {
-      recurring.regularBilling.recurringPaymentStartDate = now.toISOString();
+      nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1);
+      recurring.regularBilling.recurringPaymentStartDate = nextRenewalDate.toISOString();
       recurring.billingAgreement = `Promo ${appliedPromo.code}: Pay months 1 & 2 at regular price (${basePrice} ${currency}), 3rd month is 100% FREE! Standard rate resumes month 4. Cancel anytime.`;
     } else {
-      recurring.regularBilling.recurringPaymentStartDate = now.toISOString();
+      // Standard monthly plan with no promo: Next renewal starts in 1 month!
+      nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1);
+      recurring.regularBilling.recurringPaymentStartDate = nextRenewalDate.toISOString();
     }
 
     return recurring;

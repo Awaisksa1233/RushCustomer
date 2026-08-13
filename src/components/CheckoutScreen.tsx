@@ -1,0 +1,609 @@
+"use client";
+
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ShieldCheck, 
+  Lock, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle, 
+  Receipt, 
+  CreditCard,
+  Tag,
+  Check,
+  X,
+  Sparkles,
+  Percent,
+  Smartphone,
+  QrCode,
+  Shield
+} from "lucide-react";
+import confetti from "canvas-confetti";
+import { SubscriptionPlan } from "@/types/plan";
+import { PaymentMethod, MoyasarPaymentResponse } from "@/types/payment";
+
+interface CheckoutScreenProps {
+  selectedPlan: SubscriptionPlan;
+  paymentMethods: PaymentMethod[];
+  onCompleteCheckout: (details: {
+    plan: SubscriptionPlan;
+    promoOffer: string;
+    totalPaid: number;
+  }) => void;
+}
+
+// Available Valid Promo Codes
+const VALID_PROMO_CODES: Record<string, {
+  name: string;
+  type: "THREE_FOR_100" | "PAY_2_GET_3RD_FREE" | "PERCENT_50";
+  description: string;
+}> = {
+  "100FOR3": {
+    name: "100FOR3",
+    type: "THREE_FOR_100",
+    description: "100 SAR / Month for First 3 Months (1st: 100, 2nd: 100, 3rd: 100 SAR)",
+  },
+  "PROMO100": {
+    name: "PROMO100",
+    type: "THREE_FOR_100",
+    description: "100 SAR / Month for First 3 Months (1st: 100, 2nd: 100, 3rd: 100 SAR)",
+  },
+  "BUY2GET1": {
+    name: "BUY2GET1",
+    type: "PAY_2_GET_3RD_FREE",
+    description: "2+1 Offer: Pay 1st & 2nd Month, Get 3rd Month 100% FREE!",
+  },
+  "RUSH50": {
+    name: "RUSH50",
+    type: "PERCENT_50",
+    description: "50% OFF First Month Subscription!",
+  },
+};
+
+export default function CheckoutScreen({
+  selectedPlan,
+  paymentMethods,
+  onCompleteCheckout,
+}: CheckoutScreenProps) {
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    name: string;
+    type: "THREE_FOR_100" | "PAY_2_GET_3RD_FREE" | "PERCENT_50";
+    description: string;
+  } | null>(null);
+
+  const [promoError, setPromoError] = useState<string | null>(null);
+  
+  // Moyasar Payment Methods
+  const [moyasarChannel, setMoyasarChannel] = useState<"mada" | "creditcard" | "applepay" | "stcpay">("mada");
+  const [selectedCardId, setSelectedCardId] = useState<string>(paymentMethods[0]?.id || "card_1");
+  const [agreedConsent, setAgreedConsent] = useState(false);
+  const [showScheduleDetails, setShowScheduleDetails] = useState(true);
+  
+  // Moyasar Transaction State
+  const [isProcessingMoyasar, setIsProcessingMoyasar] = useState(false);
+  const [moyasarReceipt, setMoyasarReceipt] = useState<MoyasarPaymentResponse | null>(null);
+
+  const basePrice = selectedPlan.monthlyAmount;
+  const currency = selectedPlan.currency || "SAR";
+
+  // Calculate pricing based on applied promo code
+  let totalDueToday = basePrice;
+  let savingsAmount = 0;
+  let promoTitle = "Standard Monthly";
+
+  if (appliedPromo?.type === "THREE_FOR_100") {
+    totalDueToday = 100;
+    savingsAmount = Math.max(0, (basePrice - 100) * 3);
+    promoTitle = `Code "${appliedPromo.code}" Applied: 100 SAR/mo (First 3 Months)`;
+  } else if (appliedPromo?.type === "PAY_2_GET_3RD_FREE") {
+    totalDueToday = basePrice;
+    savingsAmount = basePrice;
+    promoTitle = `Code "${appliedPromo.code}" Applied: 2+1 Offer (3rd Month Free)`;
+  } else if (appliedPromo?.type === "PERCENT_50") {
+    totalDueToday = Math.round(basePrice * 0.5);
+    savingsAmount = basePrice - totalDueToday;
+    promoTitle = `Code "${appliedPromo.code}" Applied: 50% OFF First Month`;
+  }
+
+  const handleApplyPromo = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanCode = promoCodeInput.trim().toUpperCase();
+    if (!cleanCode) return;
+
+    const matched = VALID_PROMO_CODES[cleanCode];
+    if (matched) {
+      setAppliedPromo({ code: cleanCode, ...matched });
+      setPromoError(null);
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+    } else {
+      setPromoError(`Invalid promo code "${cleanCode}". Try "100FOR3" or "BUY2GET1"`);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCodeInput("");
+    setPromoError(null);
+  };
+
+  // Process Payment via Moyasar Gateway
+  const handlePayNow = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!agreedConsent) return;
+
+    setIsProcessingMoyasar(true);
+
+    setTimeout(() => {
+      setIsProcessingMoyasar(false);
+
+      const response: MoyasarPaymentResponse = {
+        id: `moy_pay_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString().slice(-4)}`,
+        status: "paid",
+        amount: totalDueToday * 100, // Moyasar amounts in halalas (cents)
+        currency: "SAR",
+        description: `Rush Wash - ${selectedPlan.name} Subscription`,
+        source: {
+          type: moyasarChannel,
+          company: moyasarChannel === "mada" ? "Mada Debit Card" : moyasarChannel === "stcpay" ? "STC Pay Wallet" : moyasarChannel === "applepay" ? "Apple Pay" : "Visa / Mastercard",
+          name: "Alex Morgan",
+          number: moyasarChannel === "stcpay" ? "+966 50 *** 4567" : "4108 **** **** 8829",
+        },
+        createdAt: new Date().toISOString(),
+      };
+
+      setMoyasarReceipt(response);
+      confetti({ particleCount: 90, spread: 70, origin: { y: 0.5 } });
+
+      onCompleteCheckout({
+        plan: selectedPlan,
+        promoOffer: promoTitle,
+        totalPaid: totalDueToday,
+      });
+    }, 1200);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      {!moyasarReceipt ? (
+        <form onSubmit={handlePayNow} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Column: Package, Promo & Moyasar Channels */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Selected Package Header */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Selected Package</span>
+                <h3 className="text-xl font-extrabold text-slate-900">{selectedPlan.name}</h3>
+                <p className="text-xs text-slate-500 font-semibold">{selectedPlan.description}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-2xl font-black text-slate-900">{selectedPlan.priceDisplay}</span>
+                <span className="text-xs text-slate-400 block font-medium">/ month</span>
+              </div>
+            </div>
+
+            {/* DYNAMIC PROMO CODE FIELD */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 className="text-sm font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-red-600" /> Have a Promo Code?
+                </h4>
+                <span className="text-xs font-bold text-slate-400">Step 1 of 2</span>
+              </div>
+
+              {!appliedPromo ? (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoCodeInput}
+                      onChange={(e) => {
+                        setPromoCodeInput(e.target.value);
+                        setPromoError(null);
+                      }}
+                      placeholder="Enter code e.g. 100FOR3 or BUY2GET1"
+                      className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 text-sm font-mono font-bold text-slate-900 uppercase focus:border-red-500 focus:ring-2 focus:ring-red-100 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyPromo}
+                      className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl transition-all shadow-md cursor-pointer shrink-0"
+                    >
+                      Apply Code
+                    </button>
+                  </div>
+
+                  {promoError && (
+                    <p className="text-xs font-semibold text-red-600 flex items-center gap-1.5 bg-red-50 p-2.5 rounded-xl border border-red-100">
+                      <AlertCircle className="w-4 h-4 shrink-0" /> {promoError}
+                    </p>
+                  )}
+
+                  <div className="pt-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">Sample Promo Codes:</span>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setPromoCodeInput("100FOR3"); setPromoError(null); }}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3 text-red-500" /> 100FOR3 (100 SAR/mo 3 Months)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => { setPromoCodeInput("BUY2GET1"); setPromoError(null); }}
+                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                      >
+                        <Tag className="w-3 h-3 text-emerald-600" /> BUY2GET1 (2+1 Free)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-sm text-emerald-900">{appliedPromo.code}</span>
+                        <span className="px-2 py-0.5 bg-emerald-200 text-emerald-900 text-[10px] font-black uppercase rounded-full">Applied</span>
+                      </div>
+                      <p className="text-xs text-emerald-700 font-semibold mt-0.5">{appliedPromo.description}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRemovePromo}
+                    className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* MOYASAR PAYMENT GATEWAY CHANNELS */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#0066FF] text-white flex items-center justify-center font-black text-[11px]">
+                    م
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black uppercase tracking-wider text-slate-900">
+                      Moyasar Payments (مويسر)
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Saudi Arabia PCI-DSS Certified Gateway • Mada, Apple Pay, STC Pay
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-slate-400">Step 2 of 2</span>
+              </div>
+
+              {/* Moyasar Payment Options */}
+              <div className="grid grid-cols-2 gap-3">
+                
+                {/* Mada Option */}
+                <div
+                  onClick={() => setMoyasarChannel("mada")}
+                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
+                    moyasarChannel === "mada"
+                      ? "border-emerald-600 bg-emerald-50/50 ring-2 ring-emerald-100 shadow-sm"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="moyasar-channel"
+                    checked={moyasarChannel === "mada"}
+                    onChange={() => setMoyasarChannel("mada")}
+                    className="text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-black text-xs">
+                    مدى
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-xs text-slate-900 block">Mada (مدى)</span>
+                    <span className="text-[10px] text-slate-500 font-semibold">Saudi Debit Card</span>
+                  </div>
+                </div>
+
+                {/* Apple Pay Option */}
+                <div
+                  onClick={() => setMoyasarChannel("applepay")}
+                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
+                    moyasarChannel === "applepay"
+                      ? "border-slate-900 bg-slate-900 text-white ring-2 ring-slate-400 shadow-sm"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="moyasar-channel"
+                    checked={moyasarChannel === "applepay"}
+                    onChange={() => setMoyasarChannel("applepay")}
+                    className="text-slate-900"
+                  />
+                  <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center font-black text-xs">
+                    
+                  </div>
+                  <div>
+                    <span className={`font-extrabold text-xs block ${moyasarChannel === "applepay" ? "text-white" : "text-slate-900"}`}>
+                      Apple Pay
+                    </span>
+                    <span className={`text-[10px] font-semibold ${moyasarChannel === "applepay" ? "text-slate-300" : "text-slate-500"}`}>
+                      1-Click Touch ID
+                    </span>
+                  </div>
+                </div>
+
+                {/* Credit Card Option */}
+                <div
+                  onClick={() => setMoyasarChannel("creditcard")}
+                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
+                    moyasarChannel === "creditcard"
+                      ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-100 shadow-sm"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="moyasar-channel"
+                    checked={moyasarChannel === "creditcard"}
+                    onChange={() => setMoyasarChannel("creditcard")}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs">
+                    <CreditCard className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-xs text-slate-900 block">Visa / Master</span>
+                    <span className="text-[10px] text-slate-500 font-semibold">Credit / Debit</span>
+                  </div>
+                </div>
+
+                {/* STC Pay Option */}
+                <div
+                  onClick={() => setMoyasarChannel("stcpay")}
+                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${
+                    moyasarChannel === "stcpay"
+                      ? "border-purple-600 bg-purple-50/50 ring-2 ring-purple-100 shadow-sm"
+                      : "border-slate-200 hover:border-slate-300 bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="moyasar-channel"
+                    checked={moyasarChannel === "stcpay"}
+                    onChange={() => setMoyasarChannel("stcpay")}
+                    className="text-purple-600 focus:ring-purple-500"
+                  />
+                  <div className="w-8 h-8 rounded-xl bg-purple-700 text-white flex items-center justify-center font-black text-xs">
+                    STC
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-xs text-slate-900 block">STC Pay</span>
+                    <span className="text-[10px] text-slate-500 font-semibold">Digital Wallet</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Saved Card Quick Select */}
+              <div className="pt-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                  Saved Cards on File (Moyasar Vault):
+                </span>
+                {paymentMethods.map((card) => (
+                  <div key={card.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center text-xs">
+                    <span className="font-mono font-bold text-slate-800">
+                      {card.brand.toUpperCase()} •••• {card.last4} ({card.holderName})
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      Moyasar Vaulted
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column: Order Summary & Moyasar Checkout Action */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 shadow-xl space-y-5">
+              
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h4 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                  <Receipt className="w-4 h-4 text-red-400" /> Moyasar Invoice
+                </h4>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                  🇸🇦 Moyasar KSA
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between text-slate-300">
+                  <span>Package:</span>
+                  <span className="font-bold text-white">{selectedPlan.name}</span>
+                </div>
+
+                <div className="flex justify-between text-slate-300">
+                  <span>Payment Channel:</span>
+                  <span className="font-bold text-amber-400 uppercase">{moyasarChannel} via Moyasar</span>
+                </div>
+
+                {appliedPromo && (
+                  <div className="flex justify-between text-emerald-400 font-bold">
+                    <span>Applied Code ({appliedPromo.code}):</span>
+                    <span>Save {savingsAmount} {currency}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Total Due Today */}
+              <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-slate-400">Total Due Today:</span>
+                  <span className="text-3xl font-black text-white">{totalDueToday} {currency}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleDetails(!showScheduleDetails)}
+                  className="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-semibold underline cursor-pointer"
+                >
+                  <Clock className="w-3.5 h-3.5 text-blue-400" /> {showScheduleDetails ? "Hide Schedule" : "View Schedule"}
+                </button>
+              </div>
+
+              {/* Schedule Timeline */}
+              {showScheduleDetails && (
+                <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5 text-[11px]">
+                  <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">
+                    Moyasar Auto-Renew Schedule
+                  </span>
+                  
+                  {appliedPromo?.type === "THREE_FOR_100" && (
+                    <>
+                      <div className="flex justify-between text-emerald-400 font-semibold">
+                        <span>Month 1 (Today):</span>
+                        <span>100 {currency}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-300">
+                        <span>Month 2 (Sep 11):</span>
+                        <span>100 {currency}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-300">
+                        <span>Month 3 (Oct 11):</span>
+                        <span>100 {currency}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-700">
+                        <span>Month 4+ (Nov 11 onwards):</span>
+                        <span>{basePrice} {currency}/mo</span>
+                      </div>
+                    </>
+                  )}
+
+                  {!appliedPromo && (
+                    <>
+                      <div className="flex justify-between text-emerald-400 font-semibold">
+                        <span>Month 1 (Today):</span>
+                        <span>{basePrice} {currency}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-300">
+                        <span>Month 2+ (Sep 11 onwards):</span>
+                        <span>{basePrice} {currency}/mo</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Consent Checkbox */}
+              <label className="flex items-start gap-2.5 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={agreedConsent}
+                  onChange={(e) => setAgreedConsent(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-700 cursor-pointer shrink-0"
+                />
+                <span className="text-[11px] text-slate-300 leading-tight font-medium">
+                  I agree to the Moyasar recurring payment terms. Cancel anytime in 1-click.
+                </span>
+              </label>
+
+              {/* Moyasar Pay Button */}
+              <button
+                type="submit"
+                disabled={!agreedConsent || isProcessingMoyasar}
+                className={`w-full py-3.5 px-5 font-extrabold text-sm rounded-2xl transition-all flex items-center justify-center gap-2 ${
+                  agreedConsent && !isProcessingMoyasar
+                    ? "bg-[#cc142d] hover:bg-[#b00f24] text-white shadow-lg shadow-red-500/25 cursor-pointer"
+                    : "bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed"
+                }`}
+              >
+                {isProcessingMoyasar ? (
+                  <span className="flex items-center gap-2 text-white">
+                    <Shield className="w-4 h-4 animate-spin text-amber-400" /> Verifying 3D Secure via Moyasar...
+                  </span>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 text-emerald-400" /> Pay {totalDueToday} {currency} via Moyasar
+                  </>
+                )}
+              </button>
+
+              {!agreedConsent && (
+                <p className="text-[10px] text-amber-400 text-center font-semibold flex items-center justify-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> Check consent box to complete Moyasar payment
+                </p>
+              )}
+
+            </div>
+          </div>
+
+        </form>
+      ) : (
+        /* Moyasar Payment Confirmation Receipt */
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl p-8 border border-slate-200 text-center max-w-md mx-auto space-y-6 shadow-xl"
+        >
+          <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-10 h-10" />
+          </div>
+
+          <div className="space-y-1">
+            <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
+              Moyasar Payment Verified
+            </span>
+            <h3 className="text-2xl font-extrabold text-slate-900 pt-2">Payment Successful!</h3>
+            <p className="text-xs text-slate-500">
+              Activated <strong className="text-slate-800">{selectedPlan.name}</strong> via Moyasar Payment Gateway.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-left space-y-2 text-slate-700 font-medium">
+            <div className="flex justify-between border-b border-slate-200 pb-2">
+              <span className="text-slate-500">Moyasar Transaction ID:</span>
+              <strong className="font-mono text-slate-900">{moyasarReceipt.id}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Amount Billed:</span>
+              <strong className="text-slate-900">{totalDueToday} {currency}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Channel:</span>
+              <strong className="text-emerald-700 uppercase">{moyasarReceipt.source.company}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Status:</span>
+              <strong className="text-emerald-600 font-bold uppercase">PAID (3D SECURE VERIFIED)</strong>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setMoyasarReceipt(null);
+              setAppliedPromo(null);
+              setPromoCodeInput("");
+            }}
+            className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer"
+          >
+            Return to Dashboard
+          </button>
+        </motion.div>
+      )}
+    </div>
+  );
+}

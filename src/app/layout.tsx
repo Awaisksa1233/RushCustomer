@@ -33,6 +33,11 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://cdn.moyasar.com/mpf/1.14.0/moyasar.css"
         />
+        <script
+          type="module"
+          src="https://applepay.cdn-apple.com/apple-pay-ui/1.0/assets/index.js"
+          async
+        />
       </head>
       <body className="min-h-full flex flex-col">
         {children}

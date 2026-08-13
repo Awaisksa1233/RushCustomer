@@ -159,9 +159,9 @@ export default function CheckoutScreen({
           btn.style.opacity = "1";
           btn.style.cursor = "pointer";
           btn.style.pointerEvents = "auto";
-          btn.style.background = "#cc142d";
-          btn.style.borderColor = "#cc142d";
-          btn.style.backgroundImage = "linear-gradient(135deg, #cc142d 0%, #b00f24 100%)";
+          btn.style.background = "#c91e2f";
+          btn.style.borderColor = "#c91e2f";
+          btn.style.backgroundImage = "linear-gradient(135deg, #c91e2f 0%, #b01725 100%)";
         }
       }
     };
@@ -243,7 +243,7 @@ export default function CheckoutScreen({
           {/* Header Badge */}
           <div className="flex items-center justify-between border-b border-red-500/20 pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#cc142d] to-rose-700 flex items-center justify-center text-white font-black shadow-md shadow-red-500/30">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#c91e2f] to-rose-700 flex items-center justify-center text-white font-black shadow-md shadow-red-500/30">
                 <Receipt className="w-5 h-5" />
               </div>
               <div>
@@ -314,7 +314,7 @@ export default function CheckoutScreen({
                   <button
                     type="button"
                     onClick={handleApplyPromo}
-                    className="px-6 py-3 bg-[#cc142d] hover:bg-[#b00f24] text-white font-black text-xs rounded-2xl transition-all shadow-md cursor-pointer shrink-0"
+                    className="px-6 py-3 bg-[#c91e2f] hover:bg-[#b01725] text-white font-black text-xs rounded-2xl transition-all shadow-md cursor-pointer shrink-0"
                   >
                     Apply Code
                   </button>
@@ -678,7 +678,7 @@ export default function CheckoutScreen({
                 disabled={!canPay}
                 className={`w-full py-4 px-6 font-black text-base rounded-2xl transition-all flex items-center justify-center gap-2 ${
                   canPay
-                    ? "bg-[#cc142d] hover:bg-[#b00f24] active:bg-[#960a1c] text-white shadow-xl shadow-red-500/30 cursor-pointer transform active:scale-[0.99]"
+                    ? "bg-[#c91e2f] hover:bg-[#b01725] active:bg-[#960a1c] text-white shadow-xl shadow-red-500/30 cursor-pointer transform active:scale-[0.99]"
                     : "bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed shadow-none opacity-60"
                 }`}
               >
@@ -749,7 +749,7 @@ export default function CheckoutScreen({
               setAppliedPromo(null);
               setPromoCodeInput("");
             }}
-            className="w-full py-3.5 bg-[#cc142d] hover:bg-[#b00f24] text-white font-extrabold text-xs rounded-xl shadow-lg shadow-red-500/25 cursor-pointer"
+            className="w-full py-3.5 bg-[#c91e2f] hover:bg-[#b01725] text-white font-extrabold text-xs rounded-xl shadow-lg shadow-red-500/25 cursor-pointer"
           >
             Return to Dashboard
           </button>

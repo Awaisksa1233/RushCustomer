@@ -261,7 +261,7 @@ export default function Home() {
         {/* Top Navbar */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800/80">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#cc142d] to-rose-700 flex items-center justify-center text-white font-black shadow-lg shadow-red-500/25">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#c91e2f] to-rose-700 flex items-center justify-center text-white font-black shadow-lg shadow-red-500/25">
               <Droplets className="w-6 h-6 fill-white/20" />
             </div>
             <div>
@@ -285,7 +285,7 @@ export default function Home() {
               href="https://rush.com.sa/en/login"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 bg-[#cc142d] hover:bg-[#b00f24] text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center gap-1 cursor-pointer"
+              className="px-4 py-2 bg-[#c91e2f] hover:bg-[#b01725] text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center gap-1 cursor-pointer"
             >
               Portal Login <ExternalLink className="w-3.5 h-3.5" />
             </a>
@@ -307,7 +307,7 @@ export default function Home() {
               onClick={() => setActiveTab(id as any)}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 activeTab === id
-                  ? "bg-[#cc142d] text-white shadow-md shadow-red-500/20"
+                  ? "bg-[#c91e2f] text-white shadow-md shadow-red-500/20"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/50"
               }`}
             >
@@ -335,7 +335,7 @@ export default function Home() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="w-full sm:w-auto px-5 py-2.5 bg-[#cc142d] hover:bg-[#b00f24] text-white font-bold text-xs rounded-xl shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-5 py-2.5 bg-[#c91e2f] hover:bg-[#b01725] text-white font-bold text-xs rounded-xl shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
           >
             <Sparkles className="w-4 h-4" /> Cancellation Flow
           </button>

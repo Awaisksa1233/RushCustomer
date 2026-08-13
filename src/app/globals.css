@@ -44,23 +44,23 @@ body {
 .mysr-form input[type="submit"],
 .mysr-btn,
 .mysr-btn-primary {
-  background-color: #cc142d !important;
-  background-image: linear-gradient(135deg, #cc142d 0%, #b00f24 100%) !important;
-  border-color: #cc142d !important;
+  background-color: #c91e2f !important;
+  background-image: linear-gradient(135deg, #c91e2f 0%, #b01725 100%) !important;
+  border-color: #c91e2f !important;
   color: #ffffff !important;
   border-radius: 1rem !important;
   font-weight: 900 !important;
   font-size: 1rem !important;
   padding: 0.9rem 1.5rem !important;
-  box-shadow: 0 4px 14px rgba(204, 20, 45, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(201, 30, 47, 0.35) !important;
   transition: all 0.2s ease !important;
 }
 
 .mysr-form button:hover,
 .mysr-form button.mysr-btn:hover,
 .mysr-form button[type="submit"]:hover {
-  background-color: #b00f24 !important;
-  border-color: #b00f24 !important;
+  background-color: #b01725 !important;
+  border-color: #b01725 !important;
   transform: translateY(-1px) !important;
 }
 

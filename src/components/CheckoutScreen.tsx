@@ -1217,21 +1217,26 @@ export default function CheckoutScreen({
                     <Shield className="w-5 h-5 animate-spin text-amber-400" /> Processing Apple Pay...
                   </button>
                 ) : (
-                  <apple-pay-button
-                    buttonstyle="black"
-                    type="subscribe"
-                    locale="en-US"
-                    onClick={handleApplePaySubscribe}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      height: "56px",
-                      borderRadius: "16px",
-                      cursor: canPay ? "pointer" : "not-allowed",
-                      opacity: canPay ? 1 : 0.5,
-                      pointerEvents: canPay ? "auto" : "none",
-                    }}
-                  />
+                  (() => {
+                    const ApplePayButton = "apple-pay-button" as any;
+                    return (
+                      <ApplePayButton
+                        buttonstyle="black"
+                        type="subscribe"
+                        locale="en-US"
+                        onClick={handleApplePaySubscribe}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          height: "56px",
+                          borderRadius: "16px",
+                          cursor: canPay ? "pointer" : "not-allowed",
+                          opacity: canPay ? 1 : 0.5,
+                          pointerEvents: canPay ? "auto" : "none",
+                        }}
+                      />
+                    );
+                  })()
                 )}
               </div>
             ) : (

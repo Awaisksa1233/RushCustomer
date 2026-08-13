@@ -45,3 +45,21 @@ declare global {
     }
   }
 }
+
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      "apple-pay-button": any;
+      "app-clip-code": any;
+    }
+  }
+}
+
+declare module "react/jsx-runtime" {
+  namespace JSX {
+    interface IntrinsicElements {
+      "apple-pay-button": any;
+      "app-clip-code": any;
+    }
+  }
+}

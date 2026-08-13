@@ -445,12 +445,13 @@ export default function CheckoutScreen({
       } catch (err: any) {
         addApplePayLog({
           type: "error",
-          message: `Apple Pay Session initialization error: ${err.message}`,
+          message: `Apple Pay Session error (WebSocket / Relay unavailable): ${err.message}`,
           details: { error: err.message, stack: err.stack },
         });
         console.error("Apple Pay Session error:", err);
         setIsProcessingMoyasar(false);
-        setApplePayError("Unable to initialize Apple Pay sheet.");
+        // Seamless fallback: open Apple Pay QR modal for cross-device handoff
+        setShowApplePayQR(true);
         return;
       }
     }

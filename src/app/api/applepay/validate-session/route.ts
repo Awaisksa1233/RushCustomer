@@ -12,28 +12,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Validation URL is required" }, { status: 400 });
     }
 
-    // Load cert & key from project certs directory or fallback path
-    const certPath = path.join(process.cwd(), "certs", "merchant_id.pem");
-    const keyPath = path.join(process.cwd(), "certs", "merchant_id.key");
+    // 1. Try Environment Variables (Ideal for Vercel / Cloud deployments)
+    let certContent = process.env.APPLE_PAY_CERT || "";
+    let keyContent = process.env.APPLE_PAY_KEY || "";
 
-    let certContent = "";
-    let keyContent = "";
+    if (process.env.APPLE_PAY_CERT_BASE64) {
+      certContent = Buffer.from(process.env.APPLE_PAY_CERT_BASE64, "base64").toString("utf8");
+    }
+    if (process.env.APPLE_PAY_KEY_BASE64) {
+      keyContent = Buffer.from(process.env.APPLE_PAY_KEY_BASE64, "base64").toString("utf8");
+    }
 
-    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
-      certContent = fs.readFileSync(certPath, "utf8");
-      keyContent = fs.readFileSync(keyPath, "utf8");
-    } else {
-      const altCertPath = "D:\\moyasar\\home\\RushGift\\moyasar\\webapp\\certs\\merchant_id.pem";
-      const altKeyPath = "D:\\moyasar\\home\\RushGift\\moyasar\\webapp\\certs\\merchant_id.key";
-      if (fs.existsSync(altCertPath) && fs.existsSync(altKeyPath)) {
-        certContent = fs.readFileSync(altCertPath, "utf8");
-        keyContent = fs.readFileSync(altKeyPath, "utf8");
+    // 2. Fallback to Filesystem paths if env vars not provided
+    if (!certContent || !keyContent) {
+      const possibleCertPaths = [
+        path.join(process.cwd(), "certs", "merchant_id.pem"),
+        path.resolve("./certs/merchant_id.pem"),
+        path.join(__dirname, "..", "..", "..", "..", "certs", "merchant_id.pem"),
+        "D:\\moyasar\\home\\RushGift\\moyasar\\webapp\\certs\\merchant_id.pem",
+      ];
+
+      const possibleKeyPaths = [
+        path.join(process.cwd(), "certs", "merchant_id.key"),
+        path.resolve("./certs/merchant_id.key"),
+        path.join(__dirname, "..", "..", "..", "..", "certs", "merchant_id.key"),
+        "D:\\moyasar\\home\\RushGift\\moyasar\\webapp\\certs\\merchant_id.key",
+      ];
+
+      for (let i = 0; i < possibleCertPaths.length; i++) {
+        const cPath = possibleCertPaths[i];
+        const kPath = possibleKeyPaths[i];
+        if (fs.existsSync(cPath) && fs.existsSync(kPath)) {
+          certContent = fs.readFileSync(cPath, "utf8");
+          keyContent = fs.readFileSync(kPath, "utf8");
+          break;
+        }
       }
     }
 
     if (!certContent || !keyContent) {
       return NextResponse.json(
-        { error: "Merchant certificate or key file not found" },
+        {
+          error: "Merchant certificate or key file not found",
+          hint: "Set APPLE_PAY_CERT and APPLE_PAY_KEY in Vercel environment variables, or ensure certs/merchant_id.pem exists in repo.",
+        },
         { status: 500 }
       );
     }

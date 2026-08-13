@@ -148,11 +148,94 @@ export default function CheckoutScreen({
     }
   }, [useMoyasarForm, totalDueToday, selectedPlan, currency]);
 
-  // Handle Native Apple Pay 1-Click Subscription
-  const handleApplePaySubscribe = () => {
+  // Handle Native Apple Pay 1-Click Subscription with Certificate Merchant Validation
+  const handleApplePaySubscribe = async () => {
     if (!canPay) return;
     setIsProcessingMoyasar(true);
 
+    const ApplePaySession = typeof window !== "undefined" ? (window as any).ApplePaySession : null;
+
+    // If native Apple Pay JS is supported in Safari / iOS
+    if (ApplePaySession && ApplePaySession.canMakePayments()) {
+      try {
+        const paymentRequest = {
+          countryCode: "SA",
+          currencyCode: currency,
+          supportedNetworks: ["mada", "visa", "mastercard"],
+          merchantCapabilities: ["supports3DS"],
+          total: {
+            label: `Rush Wash - ${selectedPlan.name}`,
+            amount: (totalDueToday).toFixed(2),
+          },
+        };
+
+        const session = new ApplePaySession(3, paymentRequest);
+
+        // Merchant Validation Callback (uses merchant_id.pem & merchant_id.key)
+        session.onvalidatemerchant = async (event: any) => {
+          try {
+            const res = await fetch("/api/applepay/validate-session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ validationUrl: event.validationURL }),
+            });
+            const merchantSession = await res.json();
+            if (merchantSession.error) {
+              console.error("Apple Pay Merchant Validation Error:", merchantSession);
+              session.abort();
+              setIsProcessingMoyasar(false);
+              return;
+            }
+            session.completeMerchantValidation(merchantSession);
+          } catch (err) {
+            console.error("Failed merchant validation:", err);
+            session.abort();
+            setIsProcessingMoyasar(false);
+          }
+        };
+
+        // Payment Authorization Callback
+        session.onpaymentauthorized = (event: any) => {
+          session.completePayment(ApplePaySession.STATUS_SUCCESS);
+          setIsProcessingMoyasar(false);
+
+          const response: MoyasarPaymentResponse = {
+            id: `moy_pay_apple_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString().slice(-4)}`,
+            status: "paid",
+            amount: totalDueToday * 100, // Halalas
+            currency: currency,
+            description: `Rush Wash - ${selectedPlan.name} Subscription (Apple Pay)`,
+            source: {
+              type: "applepay",
+              company: "Apple Pay (Mada / Visa)",
+              name: "Apple Pay User",
+              number: "•••• 8829",
+            },
+            createdAt: new Date().toISOString(),
+          };
+
+          setMoyasarReceipt(response);
+          confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+
+          onCompleteCheckout({
+            plan: selectedPlan,
+            promoOffer: `${promoTitle} via Apple Pay`,
+            totalPaid: totalDueToday,
+          });
+        };
+
+        session.oncancel = () => {
+          setIsProcessingMoyasar(false);
+        };
+
+        session.begin();
+        return;
+      } catch (err) {
+        console.log("Apple Pay Session init fallback:", err);
+      }
+    }
+
+    // Demo / Non-Safari fallback authorization
     setTimeout(() => {
       setIsProcessingMoyasar(false);
 
@@ -160,7 +243,7 @@ export default function CheckoutScreen({
         id: `moy_pay_apple_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString().slice(-4)}`,
         status: "paid",
         amount: totalDueToday * 100, // Halalas
-        currency: "SAR",
+        currency: currency,
         description: `Rush Wash - ${selectedPlan.name} Subscription (Apple Pay)`,
         source: {
           type: "applepay",

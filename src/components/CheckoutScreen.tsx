@@ -1233,6 +1233,9 @@ export default function CheckoutScreen({
                           cursor: canPay ? "pointer" : "not-allowed",
                           opacity: canPay ? 1 : 0.5,
                           pointerEvents: canPay ? "auto" : "none",
+                          WebkitAppearance: "-apple-pay-button",
+                          WebkitApplePayButtonStyle: "black",
+                          WebkitApplePayButtonType: "subscribe",
                         }}
                       />
                     );

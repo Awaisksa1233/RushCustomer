@@ -450,20 +450,19 @@ export default function CheckoutScreen({
         });
         console.error("Apple Pay Session error:", err);
         setIsProcessingMoyasar(false);
-        // Non-Apple fallback: Open QR Code modal
-        setShowApplePayQR(true);
+        setApplePayError("Apple Pay initialization failed on this device/browser. Please use Credit / Debit card.");
         return;
       }
     }
 
-    // Non-Apple device or unsupported browser: Show QR code modal
+    // Non-Apple device or unsupported browser
     addApplePayLog({
       type: "warn",
-      message: "Non-Apple device or ApplePaySession unavailable. Opening Apple Pay QR Code modal.",
+      message: "ApplePaySession is not supported on this browser or device.",
     });
 
     setIsProcessingMoyasar(false);
-    setShowApplePayQR(true);
+    setApplePayError("Apple Pay requires Safari on iOS or Mac. Please select Credit / Debit card.");
   };
 
   // Generate Apple Pay checkout QR URL (links to rush-customer.vercel.app checkout on Safari)
@@ -895,16 +894,11 @@ export default function CheckoutScreen({
                   <div>
                     <span className="font-extrabold text-sm text-white block">Apple Pay</span>
                     <span className="text-[11px] text-slate-400 font-medium">
-                      {isAppleDevice ? "1-Click Express Checkout" : "Scan QR on iPhone / iPad"}
+                      {isAppleDevice ? "1-Click Express Checkout" : "Safari on iPhone / Mac required"}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {!isAppleDevice && (
-                    <span className="text-[9px] font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
-                      <QrCode className="w-3 h-3 inline mr-0.5" />QR
-                    </span>
-                  )}
                   <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
                     paymentChoice === "applepay" ? "border-white bg-white text-black" : "border-slate-600"
                   }`}>
@@ -1210,114 +1204,7 @@ export default function CheckoutScreen({
           )}
 
 
-          {/* Apple Pay QR Code Modal (for non-Apple devices) */}
-          {showApplePayQR && (
-            <div
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-lg p-4"
-              onClick={(e) => { if (e.target === e.currentTarget) setShowApplePayQR(false); }}
-            >
-              <motion.div
-                ref={qrModalRef}
-                initial={{ opacity: 0, scale: 0.93, y: 15 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.93, y: 15 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="bg-slate-900/95 rounded-3xl p-6 sm:p-7 border border-slate-700/80 shadow-2xl max-w-sm w-full space-y-5 relative overflow-hidden"
-              >
-                {/* Subtle Apple gradient glow */}
-                <div className="absolute -top-12 -left-12 w-40 h-40 bg-white/5 rounded-full blur-3xl pointer-events-none" />
 
-                {/* Close */}
-                <button
-                  type="button"
-                  onClick={() => setShowApplePayQR(false)}
-                  className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-
-                {/* Header */}
-                <div className="text-center space-y-2 pt-1">
-                  <div className="w-12 h-12 rounded-2xl bg-black border border-slate-700 flex items-center justify-center text-white text-2xl font-serif mx-auto shadow-xl ring-1 ring-white/10">
-                    
-                  </div>
-                  <h3 className="text-lg font-black text-white tracking-tight">Apple Pay on iPhone</h3>
-                  <p className="text-xs text-slate-400 font-medium leading-relaxed max-w-[260px] mx-auto">
-                    Scan this code with your iPhone or iPad camera to complete checkout with Apple Pay.
-                  </p>
-                </div>
-
-                {/* QR Code Container with Centered Apple Pay Logo */}
-                <div className="relative bg-white rounded-2xl p-4 mx-auto w-fit shadow-2xl border border-white/20">
-                  <img
-                    src={qrImageUrl}
-                    alt="Scan to pay with Apple Pay"
-                    width={210}
-                    height={210}
-                    className="rounded-lg"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                  {/* Centered Apple Pay Logo Badge */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-black text-white px-2.5 py-1 rounded-lg border-2 border-white shadow-xl flex items-center gap-1 font-serif text-xs font-black">
-                      <span className="text-sm leading-none"></span> Pay
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Summary Card */}
-                <div className="bg-slate-800/70 rounded-2xl p-3.5 border border-slate-700/80 space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 font-semibold">Plan:</span>
-                    <span className="text-white font-bold">{selectedPlan.name}</span>
-                  </div>
-                  {appliedPromo && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-400 font-semibold">Promo Applied:</span>
-                      <span className="text-emerald-400 font-bold font-mono">{appliedPromo.code}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-xs border-t border-slate-700/80 pt-1.5">
-                    <span className="text-slate-400 font-semibold">Total Due Today:</span>
-                    <span className="text-white font-black text-sm">{totalDueToday} {currency}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 font-semibold">Standard Renewal:</span>
-                    <span className="text-slate-300 font-semibold">{basePrice} {currency}/month</span>
-                  </div>
-                </div>
-
-                {/* Step-by-Step Instructions */}
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-start gap-2.5 text-xs text-slate-300">
-                    <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-white shrink-0 mt-0.5 shadow-sm">1</div>
-                    <span className="font-medium">Open <strong className="text-white">iPhone Camera</strong> & point at QR code</span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-xs text-slate-300">
-                    <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-white shrink-0 mt-0.5 shadow-sm">2</div>
-                    <span className="font-medium">Tap banner to open checkout in <strong className="text-white">Safari</strong></span>
-                  </div>
-                  <div className="flex items-start gap-2.5 text-xs text-slate-300">
-                    <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-white shrink-0 mt-0.5 shadow-sm">3</div>
-                    <span className="font-medium">Authorize payment with <strong className="text-white">Face ID / Touch ID</strong></span>
-                  </div>
-                </div>
-
-                {/* Fallback button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowApplePayQR(false);
-                    setPaymentChoice("card");
-                    setUseMoyasarForm(true);
-                  }}
-                  className="w-full py-2.5 text-xs font-extrabold text-slate-400 hover:text-white transition-colors cursor-pointer border-t border-slate-800/80 pt-3"
-                >
-                  Or pay with Credit / Debit Card instead
-                </button>
-              </motion.div>
-            </div>
-          )}
           <div className="pt-2 space-y-3">
             {paymentChoice === "applepay" ? (
               <button

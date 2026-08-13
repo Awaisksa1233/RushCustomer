@@ -299,11 +299,16 @@ export default function CheckoutScreen({
       });
     }
 
-    // Check if native Apple Pay JS is supported in Safari / iOS
-    if (ApplePaySession && ApplePaySession.canMakePayments()) {
+    // Try native ApplePaySession (supports iOS 18 native circular "Scan Code with iPhone" modal & Safari 1-click)
+    const canTryApplePayJS = ApplePaySession && (
+      (typeof ApplePaySession.supportsVersion === "function" && ApplePaySession.supportsVersion(14)) ||
+      (typeof ApplePaySession.canMakePayments === "function" && ApplePaySession.canMakePayments())
+    );
+
+    if (canTryApplePayJS) {
       addApplePayLog({
         type: "success",
-        message: "ApplePaySession.canMakePayments() returned TRUE. Device supported.",
+        message: "ApplePaySession JS v14 supported. Initializing native Apple Pay session...",
       });
 
       try {

@@ -468,7 +468,7 @@ export default function FamilyVehiclesManager({
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {vehicleBreakdown.map(({ vehicle: v, vehicleBasePrice, discountPct, finalPrice }, index) => {
+          {vehicleBreakdown.map(({ vehicle: v, vehicleBasePrice, rawMonthly, discountPct, finalPrice }, index) => {
             const planName = v.tierName || currentPlan.name;
             const washCount = v.washCountThisMonth || 0;
 

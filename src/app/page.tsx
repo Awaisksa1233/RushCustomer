@@ -49,6 +49,16 @@ export default function Home() {
       ownerName: "Alex Morgan",
       relationship: "Primary",
       status: "Active",
+      tierId: "rush-nano-ceramic-299",
+      tierName: "Rush Nano Ceramic",
+      tierPrice: 299,
+      addons: [
+        { id: "add_1", name: "Ceramic Coating Refresh", price: 49, description: "Monthly hydro-barrier hydrophobic shield boost" }
+      ],
+      washCountThisMonth: 6,
+      lastWashDate: "2026-08-12",
+      qrCodeData: "RUSH-VIP-TESLA-3XYZ",
+      rfidTagId: "RF-8849-TES",
     },
     {
       id: "veh_2",
@@ -60,6 +70,14 @@ export default function Home() {
       ownerName: "Sarah Morgan",
       relationship: "Spouse",
       status: "Active",
+      tierId: "rush-lava-199",
+      tierName: "Rush Lava",
+      tierPrice: 199,
+      addons: [],
+      washCountThisMonth: 4,
+      lastWashDate: "2026-08-10",
+      qrCodeData: "RUSH-PASS-CAMRY-7ABC",
+      rfidTagId: "RF-3312-TOY",
     },
     {
       id: "veh_3",
@@ -71,6 +89,14 @@ export default function Home() {
       ownerName: "David Morgan",
       relationship: "Son/Daughter",
       status: "Active",
+      tierId: "rush-express-149",
+      tierName: "Rush Express",
+      tierPrice: 149,
+      addons: [],
+      washCountThisMonth: 2,
+      lastWashDate: "2026-08-04",
+      qrCodeData: "RUSH-PASS-YUKON-9DEF",
+      rfidTagId: "RF-9120-GMC",
     },
   ]);
 
@@ -178,6 +204,12 @@ export default function Home() {
 
   const handleRemoveFamilyVehicle = (id: string) => {
     setFamilyVehicles((prev) => prev.filter((v) => v.id !== id));
+  };
+
+  const handleUpdateFamilyVehicle = (id: string, updates: Partial<FamilyVehicle>) => {
+    setFamilyVehicles((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, ...updates } : v))
+    );
   };
 
   const handleAddCard = (data: CardFormData) => {
@@ -381,6 +413,7 @@ export default function Home() {
               maxSlots={5}
               onAddVehicle={handleAddFamilyVehicle}
               onRemoveVehicle={handleRemoveFamilyVehicle}
+              onUpdateVehicle={handleUpdateFamilyVehicle}
             />
           </div>
         )}

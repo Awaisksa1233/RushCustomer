@@ -8,6 +8,7 @@ import PaymentMethodsManager from "@/components/PaymentMethodsManager";
 import PlanSelection, { PLANS } from "@/components/PlanSelection";
 import FamilyVehiclesManager from "@/components/FamilyVehiclesManager";
 import CheckoutScreen from "@/components/CheckoutScreen";
+import CashierQRScreen from "@/components/CashierQRScreen";
 
 import { CancellationData, AnalyticsMetric } from "@/types/cancellation";
 import { PaymentMethod, CardFormData, CardBrand } from "@/types/payment";
@@ -22,7 +23,8 @@ import {
   ShoppingBag,
   Droplets,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  QrCode
 } from "lucide-react";
 
 export default function Home() {
@@ -31,8 +33,8 @@ export default function Home() {
   const [activeOffer, setActiveOffer] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<
-    "SUBSCRIBER" | "PLANS" | "CHECKOUT" | "FAMILY" | "PAYMENTS" | "ANALYTICS"
-  >("SUBSCRIBER");
+    "CASHIER_QR" | "SUBSCRIBER" | "PLANS" | "CHECKOUT" | "FAMILY" | "PAYMENTS" | "ANALYTICS"
+  >("CASHIER_QR");
 
   // Active Plan State (Default to Rush Nano Ceramic 299 SAR)
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan>(() => PLANS[2] || PLANS[0]);
@@ -327,6 +329,7 @@ export default function Home() {
         {/* Main Navigation Pill Tabs */}
         <nav className="flex items-center p-1 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800/80 overflow-x-auto shadow-inner">
           {[
+            { id: "CASHIER_QR", label: "Pay via QR", icon: QrCode },
             { id: "SUBSCRIBER", label: "Portal", icon: Layers },
             { id: "PLANS", label: "Plans", icon: Tag },
             { id: "CHECKOUT", label: "Moyasar Checkout", icon: ShoppingBag },
@@ -374,6 +377,12 @@ export default function Home() {
         </div>
 
         {/* Dynamic Tab Views */}
+        {activeTab === "CASHIER_QR" && (
+          <div className="space-y-6">
+            <CashierQRScreen />
+          </div>
+        )}
+
         {activeTab === "SUBSCRIBER" && (
           <div className="space-y-6">
             <SubscriptionCard
